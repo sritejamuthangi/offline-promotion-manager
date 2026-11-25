@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Offline Promotion Manager · Free design &amp; print studio</title>
+    <meta
+      name="description"
+      content="Free, open-source design and print studio that runs entirely on your device. Make posters, flyers, cards and certificates, then print them at any size."
+    />
+    <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16151c" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Apply the saved theme before the first paint so dark mode never flashes white.
+      (() => {
+        let theme = 'system';
+        try {
+          const saved = JSON.parse(localStorage.getItem('opm-settings') || '{}');
+          theme = saved?.state?.theme || 'system';
+        } catch {
+          // Unreadable settings: fall back to the system theme.
+        }
+        const dark =
+          theme === 'dark' ||
+          (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>This app needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dev-dist/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Private files that must never be published:
+# the legacy app, private brand designs and any personal data.
+private/
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+*.local
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

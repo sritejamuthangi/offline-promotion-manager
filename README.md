@@ -1,0 +1,112 @@
+<div align="center">
+  <img src="public/favicon.svg" width="72" height="72" alt="" />
+  <h1>Offline Promotion Manager</h1>
+  <p><strong>Design anything. Print any size.</strong></p>
+  <p>
+    A free, open-source design and print studio that runs entirely on your device.<br />
+    No account, no server, no tracking: your designs never leave your computer or phone.
+  </p>
+</div>
+
+---
+
+## Why this exists
+
+- **Free for everyone.** Every template and feature, no paywall, no watermark on your prints.
+- **Private.** Designs and images are saved only in your browser (IndexedDB). Nothing is uploaded.
+- **Made to print at true size.** Sizes are stored in real units, so an A4 design is exactly 210 × 297 mm on paper. Printing at any size, from A6 up to A0 or custom, arrives in step 6 below.
+- **Made for the whole world.** A4 and millimetres or US Letter and inches depending on your region (already working), with every writing system and right-to-left languages as the editor grows.
+- **Open source (MIT).** Use it, change it, host it yourself, ship it in your own products.
+
+## Status
+
+This project is being rebuilt from a single-purpose poster maker into a general design studio. The
+balanced card layout of that first version lives on in the upcoming Smart Grid element.
+
+- [x] **Phase 0: foundation.** Project setup, design file format, storage, tests, CI, licence.
+- [x] **Step 1: saving and home screen.** Create designs in about 50 preset sizes or any custom size; rename, duplicate, delete with undo, Recently deleted; light and dark theme; settings.
+- [ ] **Step 2: editor.** Select, move, resize, rotate, snapping guides, alignment, layers, undo/redo, autosave.
+- [ ] **Step 3: elements.** Text, images, shapes and lines, icons, stickers, QR codes (links, Wi‑Fi, UPI payments and more), Smart Grid.
+- [ ] **Step 4: content system.** Template catalogue, one-click colour and font styles, built-in image library, optional free image search (Openverse, Wikimedia Commons), save as template.
+- [ ] **Step 5: starter library.** About 50 templates across business, education, events, greetings, food, signs and social media.
+- [ ] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
+- [ ] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
+
+## Getting started
+
+You need [Node.js](https://nodejs.org/) 22.12 or newer.
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the address it prints (usually http://localhost:5173).
+
+| Command            | What it does                                                 |
+| ------------------ | ------------------------------------------------------------ |
+| `npm run dev`      | Start the development server with live reload                |
+| `npm run build`    | Type-check and build the static site into `dist/`            |
+| `npm run preview`  | Serve the built site locally                                 |
+| `npm run check`    | Lint, type-check and run the unit tests                      |
+| `npm test`         | Unit tests (Vitest)                                          |
+| `npm run test:e2e` | Browser tests on desktop and phone screen sizes (Playwright) |
+
+For browser tests you can reuse a browser you already have instead of downloading one:
+`$env:PW_CHANNEL = 'msedge'` (PowerShell) or `PW_CHANNEL=chrome` (bash) before `npm run test:e2e`.
+Otherwise run `npx playwright install chromium` once.
+
+### Hosting
+
+`npm run build` produces plain static files in `dist/`. Host them anywhere: Vercel, Netlify,
+GitHub Pages, Cloudflare Pages or any web server. The app uses relative paths and `#/` URLs, so it
+also works from a sub-folder without any server configuration.
+
+## How it is built
+
+| Part         | Choice                                                      |
+| ------------ | ----------------------------------------------------------- |
+| Build        | Vite 8, TypeScript 7 (strict)                               |
+| UI           | React 19, Tailwind CSS 4, Radix UI primitives, lucide icons |
+| Routing      | TanStack Router (hash URLs, lazy-loaded screens)            |
+| State        | Zustand                                                     |
+| Storage      | IndexedDB through Dexie, behind repository interfaces       |
+| File format  | Versioned JSON validated with Zod, with migrations          |
+| Translations | i18next with type-checked keys                              |
+| Quality      | Biome (lint and format), Vitest, Playwright, GitHub Actions |
+
+```
+src/
+  core/        Pure TypeScript: design format, units, paper sizes, layout. No React, fully tested.
+  storage/     IndexedDB database and repositories (swap in a server database later).
+  features/    Screens: home, design, settings.
+  components/  Shared UI components.
+  render/      Turns design data into CSS (shared by previews, editor and printing).
+  i18n/        Translations.
+  app/         App shell, routing, theme.
+tests/e2e/     Browser tests.
+docs/          Architecture notes.
+```
+
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design decisions.
+
+## Contributing
+
+Contributions of every size are welcome: bug reports, translations, templates, code and docs.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). Everyone taking part agrees to the
+[Code of Conduct](CODE_OF_CONDUCT.md). Please report security problems privately, as described in
+[SECURITY.md](SECURITY.md).
+
+## Privacy
+
+The app has no backend. It does not collect analytics, set tracking cookies, or send your designs
+anywhere. Everything is stored in your browser on your device, so clearing the site's data in your
+browser deletes your designs. A backup and restore feature is planned.
+
+## License
+
+[MIT](LICENSE). Free to use, change and share.
+
+---
+
+Built by [Sriteja Muthangi](https://www.linkedin.com/in/sritejamuthangi/).

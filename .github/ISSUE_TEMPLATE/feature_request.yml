@@ -1,0 +1,20 @@
+name: Idea or feature request
+description: Suggest a template, size, feature or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to make or do?
+      description: Describe the situation, for example "I print price lists for my shop every week".
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How could the app help?
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Paper sizes, languages, printers or examples that matter for this idea.
