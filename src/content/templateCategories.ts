@@ -5,36 +5,36 @@ export const TEMPLATE_CATEGORY_INFO = {
   business: {
     title: 'Free business templates',
     description:
-      'Create sale flyers, business cards and hiring posters. Customise your branding, contact details and QR codes with free, editable business templates.',
+      'Create business cards, sale and property flyers, price lists and loyalty cards. Customise branding, contact details and QR codes with free business templates.',
   },
   events: {
     title: 'Free event templates',
     description:
-      'Promote concerts, festivals and community gatherings with editable event posters. Add your date, venue, colours and booking details.',
+      'Promote concerts, markets, exhibitions, charity runs and meetups with editable posters, flyers and tickets. Add your date, venue and booking details.',
   },
   education: {
     title: 'Free education templates',
     description:
-      'Celebrate achievement and share learning opportunities with editable certificates and workshop flyers for schools, courses and community groups.',
+      'Create certificates, class timetables, study planners, reading trackers and school posters. Free editable templates for learners and educators.',
   },
   greetings: {
     title: 'Free cards and invitation templates',
     description:
-      'Make birthday invitations and thoughtful thank-you cards. Personalise your message, colours and decorative artwork with free templates.',
+      'Make birthday, wedding and baby shower invitations, thank-you cards and seasonal greetings. Personalise your message, colours and decorative artwork.',
   },
   food: {
     title: 'Free food and drink templates',
     description:
-      'Create restaurant menus and café promotions. Edit dishes, prices and opening hours, then match the colours and fonts to your business.',
+      'Create restaurant, bakery and drinks menus, recipe cards and catering flyers. Edit dishes and prices, then match the colours and fonts to your business.',
   },
   signs: {
     title: 'Free sign templates',
     description:
-      'Make clear Wi-Fi signs and notices for shops, offices and shared spaces. Edit the message, network details and QR codes to suit your venue.',
+      'Make Wi-Fi signs, opening hours, direction arrows, reserved table cards and recycling labels. Customise clear signs for shops, offices and shared spaces.',
   },
   social: {
     title: 'Free social media templates',
     description:
-      'Create square quote posts and vertical launch stories. Customise your words, colours, fonts and images in a free local-first design editor.',
+      'Create quote posts, launch stories, video thumbnails, infographic pins and profile covers. Edit words, colours, fonts and images on your device.',
   },
 } satisfies Record<TemplateCategory, { title: string; description: string }>;

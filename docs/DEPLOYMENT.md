@@ -5,11 +5,11 @@ There is no application backend or account system.
 
 ## Public pages
 
-The build generates 24 public pages from the bundled content:
+The build generates 60 public pages from the bundled content:
 
 - `/` and `/templates`
 - `/templates/category/<category>` for seven categories
-- `/templates/<template-id>` for every bundled template (currently 14)
+- `/templates/<template-id>` for every bundled template (currently 50)
 - `/settings`
 
 Each has readable HTML before JavaScript, a unique title and description, an absolute canonical

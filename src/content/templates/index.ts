@@ -1,11 +1,68 @@
 import type { TemplateDefinition } from '@/core/templates';
-import { businessCard, hiringPoster, saleFlyer } from './business';
-import { certificate, workshopFlyer } from './education';
-import { eventPoster } from './events';
-import { cafeSpecial, restaurantMenu } from './food';
-import { birthdayInvitation, thankYouCard } from './greetings';
-import { noticeSign, wifiSign } from './signs';
-import { announcementStory, quotePost } from './social';
+import {
+  businessCard,
+  grandOpening,
+  hiringPoster,
+  loyaltyCard,
+  productFlyer,
+  realEstateFlyer,
+  saleFlyer,
+  servicePriceList,
+} from './business';
+import {
+  certificate,
+  classroomRules,
+  classTimetable,
+  readingChallenge,
+  scienceFair,
+  studyPlanner,
+  workshopFlyer,
+} from './education';
+import {
+  charityRun,
+  communityMarket,
+  eventPoster,
+  eventTicket,
+  exhibitionPoster,
+  meetupFlyer,
+  movieNight,
+} from './events';
+import {
+  bakeryMenu,
+  cafeSpecial,
+  cateringFlyer,
+  drinksMenu,
+  foodTruckMenu,
+  recipeCard,
+  restaurantMenu,
+} from './food';
+import {
+  anniversaryCard,
+  babyShower,
+  birthdayInvitation,
+  congratulationsCard,
+  holidayCard,
+  thankYouCard,
+  weddingInvitation,
+} from './greetings';
+import {
+  directionalSign,
+  noticeSign,
+  openingHours,
+  quietZone,
+  recyclingSign,
+  reservedSign,
+  wifiSign,
+} from './signs';
+import {
+  announcementStory,
+  eventSocialPost,
+  profileBanner,
+  quotePost,
+  testimonialPost,
+  tipsPin,
+  tutorialThumbnail,
+} from './social';
 
 /**
  * Templates bundled with the app, shared by the catalogue and public-page build.
@@ -27,6 +84,42 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   cafeSpecial,
   noticeSign,
   announcementStory,
+  grandOpening,
+  classTimetable,
+  communityMarket,
+  weddingInvitation,
+  bakeryMenu,
+  openingHours,
+  tutorialThumbnail,
+  servicePriceList,
+  studyPlanner,
+  charityRun,
+  babyShower,
+  foodTruckMenu,
+  directionalSign,
+  eventSocialPost,
+  realEstateFlyer,
+  readingChallenge,
+  exhibitionPoster,
+  congratulationsCard,
+  recipeCard,
+  reservedSign,
+  testimonialPost,
+  loyaltyCard,
+  scienceFair,
+  movieNight,
+  holidayCard,
+  cateringFlyer,
+  quietZone,
+  tipsPin,
+  productFlyer,
+  classroomRules,
+  meetupFlyer,
+  anniversaryCard,
+  drinksMenu,
+  recyclingSign,
+  profileBanner,
+  eventTicket,
 ];
 
 export function getTemplate(id: string): TemplateDefinition | undefined {

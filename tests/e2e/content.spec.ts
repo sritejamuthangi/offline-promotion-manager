@@ -93,13 +93,13 @@ test('filters and searches the template catalogue', async ({ page }) => {
   const cards = page.getByTestId('template-card');
   await expect(cards.first()).toBeVisible();
   const total = await cards.count();
-  expect(total).toBeGreaterThanOrEqual(12);
+  expect(total).toBeGreaterThanOrEqual(50);
 
   await page
     .getByRole('navigation', { name: 'Template categories' })
     .getByRole('link', { name: 'Food & drink' })
     .click();
-  await expect(cards).toHaveCount(2);
+  await expect(cards).toHaveCount(7);
   await expect(page.getByRole('button', { name: 'Preview Restaurant menu' })).toBeVisible();
 
   await page.getByRole('link', { name: 'All', exact: true }).click();
@@ -121,6 +121,7 @@ test('every bundled template renders without clipped text', async ({ page }) => 
   await page.goto('./templates');
   // The first visit loads the catalogue and its fonts on demand.
   await expect(page.getByTestId('template-card').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('template-card')).toHaveCount(50);
   await page.waitForLoadState('networkidle');
   expect(await clippedText(page)).toEqual([]);
 });

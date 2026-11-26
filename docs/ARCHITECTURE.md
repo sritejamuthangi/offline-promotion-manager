@@ -73,8 +73,13 @@ change.
 
 `src/content/templates` contains responsive layout functions for bundled templates. A shared kit
 builds ordinary design elements; each template selects regional presets and uses theme colour/font
-slots. The catalogue includes 14 starting templates; step 5 expands it. `src/content/palettes.ts`
+slots. The catalogue includes 50 templates across seven categories. `src/content/palettes.ts`
 and `fontPairings.ts` provide 20 palettes and 14 pairings. Palette tests verify text contrast.
+
+Templates use regular editable elements, including replaceable image placeholders, rather than
+flattened pictures. Layout tests build every design at both regional sizes and browser tests measure
+text after the bundled fonts load. Register new templates in `src/content/templates/index.ts`; their
+public detail pages and sitemap entries are generated automatically.
 
 `library:<id>` sources refer to 33 deterministic SVG graphics, drawn locally using the design's
 colours. Adaptive backgrounds and frames redraw for the target proportions. They use no IndexedDB

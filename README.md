@@ -27,8 +27,8 @@ balanced card layout of that first version lives on in the Smart Grid element.
 - [x] **Step 1: saving and home screen.** Create designs in about 50 preset sizes or any custom size; rename, duplicate, delete with undo, Recently deleted; light and dark theme; settings.
 - [x] **Step 2: editor.** Text, seven shapes and lines; select, move, resize, rotate, snapping guides, alignment/distribution, layers, undo/redo, local autosave, pan/zoom and touch gestures.
 - [x] **Step 3: elements.** Images, outline icons, stickers, QR codes (links, Wi‑Fi, email, calls, messages and UPI payments), Smart Grid with logos, image fills, borders, shadows and richer text styling.
-- [x] **Step 4: content system.** Searchable template catalogue with 14 starter designs, 20 colour palettes, 14 font pairings, built-in graphics, optional Openverse/Wikimedia Commons image search and local save-as-template.
-- [ ] **Step 5: starter library.** About 50 templates across business, education, events, greetings, food, signs and social media.
+- [x] **Step 4: content system.** Searchable template catalogue, 20 colour palettes, 14 font pairings, built-in graphics, optional Openverse/Wikimedia Commons image search and local save-as-template.
+- [x] **Step 5: starter library.** 50 editable templates across business, education, events, greetings, food, signs and social media, with international and US sizes.
 - [ ] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
 - [ ] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
 
@@ -79,6 +79,11 @@ Browse **Templates**, search by name or subject, or choose a category. Each bund
 a shareable public page and adapts to A4 or US paper sizes. **Use this template** creates a fully
 editable local design. **Styles** applies one-click colour palettes and heading/body font pairings;
 15 bundled fonts are available in the font picker. Custom colours and fonts remain editable.
+
+The 50-template library includes business and loyalty cards, property flyers, class timetables,
+study planners, invitations, event tickets, menus, recipe cards, signs, video thumbnails and social
+posts. Photo placeholders can be replaced with your own images from **Properties → Replace image**.
+All bundled artwork and fonts are local; every template works without online image search.
 
 Use **Save as template** in the editor header or a home-screen design menu. It stores an independent
 snapshot under **Your templates**. Rename or delete saved templates from their preview, or start

@@ -28,7 +28,9 @@ function imageSources(element: DesignElement): string[] {
 describe('bundled templates', () => {
   it('have unique IDs, names and valid categories', () => {
     const ids = TEMPLATES.map((t) => t.id);
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(50);
     expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(TEMPLATES.map((t) => t.name)).size).toBe(TEMPLATES.length);
     for (const template of TEMPLATES) {
       expect(template.id).toMatch(/^[a-z0-9-]+$/);
       expect(template.name.trim()).not.toBe('');
@@ -37,9 +39,9 @@ describe('bundled templates', () => {
     }
     for (const category of TEMPLATE_CATEGORIES)
       expect(
-        TEMPLATES.some((t) => t.category === category),
+        TEMPLATES.filter((t) => t.category === category).length,
         category,
-      ).toBe(true);
+      ).toBeGreaterThanOrEqual(7);
   });
 
   it.each(cases)('%s (%s) builds a valid, well-placed design', (_id, paper, template) => {

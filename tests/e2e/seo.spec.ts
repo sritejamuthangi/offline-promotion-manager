@@ -10,7 +10,7 @@ test('every sitemap URL returns meaningful HTML with matching canonical metadata
   const sitemap = await request.get('/sitemap.xml');
   const xml = await sitemap.text();
   const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1] ?? '');
-  expect(urls.length).toBeGreaterThanOrEqual(24);
+  expect(urls.length).toBeGreaterThanOrEqual(60);
   expect(new Set(urls).size).toBe(urls.length);
   for (const url of urls) {
     expect(url.startsWith(DOMAIN)).toBe(true);
