@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLASSIC_MAX_PER_ROW, classicRows, uniformRows } from './balancedRows';
+import { CLASSIC_MAX_PER_ROW, classicRows, smartGridRows, uniformRows } from './balancedRows';
 
 /**
  * The original algorithm from the first version of this project
@@ -96,5 +96,22 @@ describe('uniformRows', () => {
   it('handles empty and invalid input', () => {
     expect(uniformRows(0, 3)).toEqual([]);
     expect(uniformRows(5, 0)).toEqual([]);
+  });
+});
+
+describe('smartGridRows', () => {
+  it('uses balanced rows when no column count is chosen', () => {
+    expect(smartGridRows(5)).toEqual([2, 1, 2]);
+    expect(smartGridRows(8)).toEqual([3, 2, 3]);
+  });
+
+  it('uses a fixed column count when chosen', () => {
+    expect(smartGridRows(10, 4)).toEqual([4, 4, 2]);
+    expect(smartGridRows(3, 6)).toEqual([3]);
+  });
+
+  it('returns no rows for empty input', () => {
+    expect(smartGridRows(0)).toEqual([]);
+    expect(smartGridRows(0, 3)).toEqual([]);
   });
 });

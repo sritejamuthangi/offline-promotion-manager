@@ -2,10 +2,14 @@ import {
   ChevronDown,
   Copy,
   Hand,
+  ImagePlus,
   Layers,
+  LayoutGrid,
   Magnet,
   MousePointer2,
+  QrCode,
   SlidersHorizontal,
+  Sparkles,
   Square,
   SquareMousePointer,
   Trash,
@@ -36,6 +40,10 @@ export function EditorToolbar({
   panelOpen,
   openPanel,
   insert,
+  onAddImage,
+  onOpenElements,
+  onOpenQr,
+  onAddGrid,
 }: {
   hand: boolean;
   setHand: (hand: boolean) => void;
@@ -47,6 +55,10 @@ export function EditorToolbar({
   panelOpen: boolean;
   openPanel: (panel: EditorPanel) => void;
   insert: (kind: InsertKind) => void;
+  onAddImage: () => void;
+  onOpenElements: () => void;
+  onOpenQr: () => void;
+  onAddGrid: () => void;
 }) {
   const { t } = useTranslation();
   const store = useEditorStore();
@@ -110,6 +122,22 @@ export function EditorToolbar({
       </DropdownMenu>
       <Button size="sm" variant="ghost" onClick={() => insert('line')}>
         {t('editor.addLine')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onAddImage}>
+        <ImagePlus />
+        {t('editor.addImage')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onOpenElements}>
+        <Sparkles />
+        {t('editor.elements')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onOpenQr}>
+        <QrCode />
+        {t('editor.qrCode')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onAddGrid}>
+        <LayoutGrid />
+        {t('editor.smartGrid')}
       </Button>
       <span className="mx-1 h-6 border-s" />
       <Button

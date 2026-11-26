@@ -127,11 +127,157 @@ export const LineElementSchema = z.object({
 });
 export type LineElement = z.infer<typeof LineElementSchema>;
 
+export const QR_ERROR_LEVELS = ['L', 'M', 'Q', 'H'] as const;
+export type QrErrorLevel = (typeof QR_ERROR_LEVELS)[number];
+
+export const QrElementSchema = z.object({
+  ...elementBase,
+  type: z.literal('qr'),
+  /** The exact text encoded in the code, e.g. a URL, Wi-Fi or UPI payment payload. */
+  value: z.string().min(1).max(3000),
+  ecLevel: z.enum(QR_ERROR_LEVELS),
+  foreground: ColorValueSchema,
+  background: ColorValueSchema,
+  /** Quiet-zone width in modules. */
+  margin: z.number().int().min(0).max(16).optional(),
+});
+export type QrElement = z.infer<typeof QrElementSchema>;
+
+/** Outline icons available from the Elements picker. */
+export const ICON_NAMES = [
+  'star',
+  'heart',
+  'sparkles',
+  'zap',
+  'sun',
+  'moon',
+  'cloud',
+  'leaf',
+  'flame',
+  'droplet',
+  'camera',
+  'music',
+  'mic',
+  'video',
+  'phone',
+  'mail',
+  'map-pin',
+  'globe',
+  'calendar',
+  'clock',
+  'gift',
+  'party-popper',
+  'trophy',
+  'crown',
+  'medal',
+  'target',
+  'rocket',
+  'lightbulb',
+  'coffee',
+  'shopping-bag',
+  'credit-card',
+  'wallet',
+  'truck',
+  'wrench',
+  'graduation-cap',
+  'book-open',
+  'briefcase',
+  'users',
+  'user',
+  'megaphone',
+  'palette',
+  'scissors',
+  'shirt',
+  'utensils',
+  'stethoscope',
+  'home',
+  'car',
+  'plane',
+] as const;
+export type IconName = (typeof ICON_NAMES)[number];
+
+export const IconElementSchema = z.object({
+  ...elementBase,
+  type: z.literal('icon'),
+  icon: z.enum(ICON_NAMES),
+  color: ColorValueSchema,
+  /** Line thickness in the icon's own 24 × 24 units. */
+  strokeWidth: z.number().min(0.25).max(8),
+});
+export type IconElement = z.infer<typeof IconElementSchema>;
+
+export const STICKER_NAMES = [
+  'heart',
+  'star',
+  'burst',
+  'badge',
+  'speech',
+  'arrow',
+  'ribbon',
+  'sun',
+  'cloud',
+  'leaf',
+  'crown',
+  'sparkle',
+] as const;
+export type StickerName = (typeof STICKER_NAMES)[number];
+
+export const StickerElementSchema = z.object({
+  ...elementBase,
+  type: z.literal('sticker'),
+  sticker: z.enum(STICKER_NAMES),
+  fill: FillSchema,
+  stroke: StrokeSchema.optional(),
+  shadow: ShadowSchema.optional(),
+});
+export type StickerElement = z.infer<typeof StickerElementSchema>;
+
+export const GridItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().max(200),
+  subtitle: z.string().max(200).optional(),
+  /** `asset:<id>` for an uploaded logo. */
+  logoSrc: z.string().min(1).optional(),
+});
+export type GridItem = z.infer<typeof GridItemSchema>;
+
+export const GridTextStyleSchema = z.object({
+  fontFamily: FontValueSchema,
+  /** Font size in CSS px. */
+  fontSize: z.number().positive(),
+  fontWeight: z.number().int().min(100).max(900),
+  color: ColorValueSchema,
+});
+export type GridTextStyle = z.infer<typeof GridTextStyleSchema>;
+
+export const GridElementSchema = z.object({
+  ...elementBase,
+  type: z.literal('grid'),
+  items: z.array(GridItemSchema).max(100),
+  /** Fixed number of cards per row; omit for the balanced classic rows. */
+  columns: z.number().int().min(1).max(6).optional(),
+  gap: z.number().min(0),
+  padding: z.number().min(0),
+  cardPadding: z.number().min(0),
+  cardFill: FillSchema,
+  cardStroke: StrokeSchema.optional(),
+  cardRadius: z.number().min(0),
+  logoHeight: z.number().positive(),
+  nameStyle: GridTextStyleSchema,
+  subtitleStyle: GridTextStyleSchema,
+  shadow: ShadowSchema.optional(),
+});
+export type GridElement = z.infer<typeof GridElementSchema>;
+
 export const ElementSchema = z.discriminatedUnion('type', [
   TextElementSchema,
   ImageElementSchema,
   ShapeElementSchema,
   LineElementSchema,
+  QrElementSchema,
+  IconElementSchema,
+  StickerElementSchema,
+  GridElementSchema,
 ]);
 export type DesignElement = z.infer<typeof ElementSchema>;
 export type ElementType = DesignElement['type'];

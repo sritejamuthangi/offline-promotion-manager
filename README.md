@@ -21,12 +21,12 @@
 ## Status
 
 This project is being rebuilt from a single-purpose poster maker into a general design studio. The
-balanced card layout of that first version lives on in the upcoming Smart Grid element.
+balanced card layout of that first version lives on in the Smart Grid element.
 
 - [x] **Phase 0: foundation.** Project setup, design file format, storage, tests, CI, licence.
 - [x] **Step 1: saving and home screen.** Create designs in about 50 preset sizes or any custom size; rename, duplicate, delete with undo, Recently deleted; light and dark theme; settings.
 - [x] **Step 2: editor.** Text, seven shapes and lines; select, move, resize, rotate, snapping guides, alignment/distribution, layers, undo/redo, local autosave, pan/zoom and touch gestures.
-- [ ] **Step 3: elements.** Images, icons, stickers, QR codes (links, Wi‑Fi, UPI payments and more), Smart Grid, and richer text/shape styling.
+- [x] **Step 3: elements.** Images, outline icons, stickers, QR codes (links, Wi‑Fi, email, calls, messages and UPI payments), Smart Grid with logos, image fills, borders, shadows and richer text styling.
 - [ ] **Step 4: content system.** Template catalogue, one-click colour and font styles, built-in image library, optional free image search (Openverse, Wikimedia Commons), save as template.
 - [ ] **Step 5: starter library.** About 50 templates across business, education, events, greetings, food, signs and social media.
 - [ ] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
@@ -45,10 +45,24 @@ Then open the address it prints (usually http://localhost:5173).
 
 ### Try the editor
 
-Create a design from the home screen, then add text, a shape or a line. Use **Properties** for
-exact positions and sizes in your chosen units, typography, colours, gradients and arrangement.
-**Layers** lets you select overlapping elements, change their order, hide them or lock them.
-On phones and tablets, these panels open below the canvas; use two fingers to pan and zoom.
+Create a design from the home screen, then add text, a shape, a line, an image, an icon, a sticker,
+a QR code or a Smart Grid. Use **Properties** for exact positions and sizes in your chosen units,
+typography, colours, gradients, borders and shadows. **Layers** lets you select overlapping
+elements, change their order, hide them or lock them. On phones and tablets, these panels open
+below the canvas; use two fingers to pan and zoom.
+
+**Images** are added from your device and stored in the browser's own database, so they never leave
+it. Identical files are stored once, and images keep working after a reload. **Elements** offers a
+curated set of outline icons and decorative stickers. **QR code** creates a scannable code for a
+website, plain text, Wi‑Fi network, email, phone call, text message or UPI payment; the encoded
+content can still be edited afterwards in Properties. **Smart Grid** recreates the balanced company
+rows of the original app: add, reorder and remove items, attach a logo to each, choose the cards per
+row, and style the cards and their text.
+
+Text and images support borders and shadows. Text also has letter spacing, letter case, vertical
+alignment, strikethrough and an outline, and its font weight can be set per template. Shapes and
+stickers take solid or gradient fills; page backgrounds and Smart Grid cards can also use an image
+fill.
 
 Each completed edit saves automatically on this device. The header shows save status; if storage
 fails, use **Retry save**. If another tab changes or deletes the same design, **Save as a copy**
@@ -101,13 +115,15 @@ also works from a sub-folder without any server configuration.
 | Routing      | TanStack Router (hash URLs, lazy-loaded screens)            |
 | State        | Zustand with Immer snapshots for undo/redo                  |
 | Storage      | IndexedDB through Dexie, behind repository interfaces       |
+| Images       | Local blobs in IndexedDB, deduplicated by SHA-256            |
+| QR codes     | `uqr` (MIT), with pure payload builders in `core`            |
 | File format  | Versioned JSON validated with Zod, with migrations          |
 | Translations | i18next with type-checked keys                              |
 | Quality      | Biome (lint and format), Vitest, Playwright, GitHub Actions |
 
 ```
 src/
-  core/        Pure TypeScript: design format, units, paper sizes, layout. No React, fully tested.
+  core/        Pure TypeScript: design format, units, paper sizes, layout, QR payloads. No React, fully tested.
   storage/     IndexedDB database and repositories (swap in a server database later).
   features/    Screens: home, design, editor, settings.
   components/  Shared UI components.
@@ -140,70 +156,3 @@ browser deletes your designs. A backup and restore feature is planned.
 ---
 
 Built by [Sriteja Muthangi](https://www.linkedin.com/in/sritejamuthangi/).
-
-# Career IT Drives Submission Portal
-
-A web application to manage and preview upcoming company drives. Users can add, edit, delete companies, upload logos, and submit a header title. The data is saved in the browser using IndexedDB.
-
-## To visit: https://template-carrer-it.vercel.app/
-
-
-
----
-
-## Features
-
-- Add companies with name, logo, and technologies.
-- Edit or delete companies from the list.
-- Drag-and-drop or paste images for company logos.
-- Save header title and company data in IndexedDB.
-- Preview the company list in a new window before final submission.
-- Responsive design for desktop and mobile.
-- Dynamic print scaling for better print layouts.
-
----
-
-## Technologies Used
-
-- HTML, CSS, JavaScript
-- Bootstrap 5.3
-- IndexedDB for browser-based storage
-- SortableJS for drag-and-drop company reordering
-
----
-
-## Installation
-
-1. Clone the repository:
-```
-git clone <repository-url>
-Open index.html in a browser.
-
-No backend setup is required.
-
-Usage
-Enter a header title and submit.
-
-Add company details: name, technologies, and logo.
-
-Edit or delete companies as needed.
-
-Click Preview to see how the submitted companies will look.
-
-Click Final Submit to save data permanently in IndexedDB.
-
-File Structure
-Template_careerIT
-├── index.html          # Main form and company submission
-├── preview.html        # Preview of submitted companies
-├── scripts/
-│   └── script.js       # Main JavaScript logic
-├── style.css           # Styles for form, preview, and layout
-├── images/             # Logos and background images
-└── README.md           # Project documentation
-
-Notes
-Data persists in the browser using IndexedDB.
-Default fallback images are used if logos fail to load.
-Designed for responsive use across desktop and mobile.
-

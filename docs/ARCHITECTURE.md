@@ -31,8 +31,8 @@ A design is a JSON document validated by Zod (`src/core/schema`):
 
 - **Design**: ID, name, page size, display unit, theme, pages and metadata.
 - **Page**: background fill and an ordered list of elements (first is at the back).
-- **Element**: text, image, shape or line. More types (QR codes, icons, Smart Grid) join as the
-  editor grows.
+- **Element**: text, image, shape, line, QR code, icon, sticker or Smart Grid. New variants are
+  additive, so older designs still validate.
 
 Key rules:
 
@@ -61,6 +61,10 @@ change.
 - Editor writes use `saveEdited(design, expectedUpdatedAt)` inside one IndexedDB transaction.
   A stale revision or deleted source is rejected. Revision timestamps advance monotonically,
   even when edits happen in the same millisecond. The editor offers a new copy for recovery.
+- Uploaded images live in an `assets` table as blobs, referenced from designs as `asset:<id>`.
+  A SHA-256 hash deduplicates identical files. The renderer resolves each asset through a cached
+  object URL, so the same upload can appear in several designs without being stored twice.
+  Nothing is uploaded to a server.
 
 ## Editor
 
@@ -83,10 +87,18 @@ so that its local work can still be saved as a copy.
 
 ## Rendering and printing
 
-`src/render/PageArtwork.tsx` draws text, shapes and lines with HTML and SVG. Both the editor and
-home-screen thumbnails use it at document scale; the surrounding viewport applies scaling. Fonts,
-fills and geometry therefore agree between views. Images and richer styling are developed in
-step 3; printing and exports are planned for step 6:
+`src/render/PageArtwork.tsx` draws every element type with HTML and SVG: text, shapes and lines,
+images, QR codes, outline icons, stickers and the Smart Grid. Both the editor and home-screen
+thumbnails use it at document scale; the surrounding viewport applies scaling. Fonts, fills and
+geometry therefore agree between views. Printing and exports are planned for step 6:
+
+- QR modules come from `uqr` (MIT). The encoded text is built by pure helpers in
+  `src/core/qr.ts`, which keep the Wi‑Fi, email, phone, SMS and UPI formats testable.
+- Icons are a curated set of lucide components; stickers are bundled SVG silhouettes. Both are
+  stored in the design by name, so no network or icon font is needed at render time.
+- The Smart Grid reuses the original app's balanced row patterns
+  (`src/core/layout/balancedRows.ts`) and falls back to a monogram when an item has no logo.
+- Images and image fills resolve `asset:<id>` references through a cached object URL.
 
 - Printing uses the browser's own print engine with CSS `@page` sizes, which keeps text and shapes
   sharp at any size (Chrome/Edge, Firefox 95+, Safari 18.2+).

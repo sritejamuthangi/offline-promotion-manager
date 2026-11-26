@@ -11,6 +11,10 @@ async function showPanel(page: Page, name: 'Properties' | 'Layers') {
   } else {
     await page.getByRole('button', { name, exact: true }).first().click();
   }
+  // The panel can briefly unmount while a dialog closes; click again if it did.
+  if (!(await panel(page).isVisible())) {
+    await page.getByRole('button', { name, exact: true }).first().click();
+  }
   await expect(panel(page)).toBeVisible();
 }
 
@@ -57,6 +61,23 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
 
 async function saved(page: Page) {
   await expect(page.getByRole('status').filter({ hasText: 'Saved on this device' })).toBeVisible();
+}
+
+const toolbar = (page: Page) => page.getByRole('toolbar', { name: 'Design tools' });
+
+const svgFile = (label: string) =>
+  Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#f97316"/><text x="12" y="48" font-family="sans-serif" font-size="22" fill="#ffffff">${label}</text></svg>`,
+  );
+
+async function uploadImage(page: Page, button: Locator, name: string, label = 'Art') {
+  const chooser = page.waitForEvent('filechooser');
+  await button.click();
+  await (await chooser).setFiles({
+    name,
+    mimeType: 'image/svg+xml',
+    buffer: svgFile(label),
+  });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -365,4 +386,148 @@ test('touch dragging and two-finger zoom preserve the artwork', async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     page.viewportSize()?.width ?? 0,
   );
+});
+
+test('uploads an image locally and restores it from IndexedDB after reload', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await uploadImage(
+    page,
+    toolbar(page).getByRole('button', { name: 'Add image', exact: true }),
+    'swatch.svg',
+    'Local',
+  );
+  const image = artwork(page).locator('[data-element-type="image"] img');
+  await expect(image).toBeVisible();
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  await saved(page);
+
+  await page.reload();
+  const restored = artwork(page).locator('[data-element-type="image"] img');
+  await expect(restored).toBeVisible();
+  await expect(restored).toHaveAttribute('src', /^blob:/);
+  await expect(restored).toHaveAttribute('alt', 'swatch.svg');
+  expect(errors).toEqual([]);
+});
+
+test('creates URL and Wi-Fi QR codes and edits their payload in Properties', async ({ page }) => {
+  await toolbar(page).getByRole('button', { name: 'QR code', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'QR code' })).toBeVisible();
+  await dialog.getByLabel('Website address', { exact: true }).fill('example.com');
+  await dialog.getByRole('button', { name: 'Add QR code', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  const first = artwork(page).locator('[data-element-type="qr"]');
+  await expect(first).toBeVisible();
+  expect(await first.locator('svg rect').count()).toBeGreaterThan(20);
+  await showPanel(page, 'Properties');
+  await expect(panel(page).getByRole('heading', { name: 'QR code' })).toBeVisible();
+  await expect(panel(page).getByLabel('QR content', { exact: true })).toHaveValue(
+    'https://example.com',
+  );
+
+  await panel(page).getByLabel('QR content', { exact: true }).fill('https://example.org');
+  await panel(page).getByLabel('QR content', { exact: true }).press('Tab');
+  await expect(first.locator('svg rect').first()).toBeVisible();
+  await saved(page);
+
+  await toolbar(page).getByRole('button', { name: 'QR code', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Type', { exact: true }).selectOption('wifi');
+  await dialog.getByLabel('Network name (SSID)', { exact: true }).fill('Cafe Guest');
+  await dialog.getByLabel('Password', { exact: true }).fill('secret');
+  await dialog.getByRole('button', { name: 'Add QR code', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(artwork(page).locator('[data-element-type="qr"]')).toHaveCount(2);
+  await expect(panel(page).getByLabel('QR content', { exact: true })).toHaveValue(
+    'WIFI:T:WPA;S:Cafe Guest;P:secret;;',
+  );
+  await saved(page);
+
+  await page.reload();
+  await expect(artwork(page).locator('[data-element-type="qr"]')).toHaveCount(2);
+});
+
+test('adds icons and stickers from the Elements dialog', async ({ page }) => {
+  await toolbar(page).getByRole('button', { name: 'Elements', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Star', exact: true }).click();
+  await expect(artwork(page).locator('[data-element-type="icon"] svg')).toBeVisible();
+
+  await toolbar(page).getByRole('button', { name: 'Elements', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Stickers', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Burst', exact: true }).click();
+  await expect(artwork(page).locator('[data-element-type="sticker"] svg path')).toBeVisible();
+  await saved(page);
+
+  await page.reload();
+  await expect(artwork(page).locator('[data-element-type="icon"]')).toHaveCount(1);
+  await expect(artwork(page).locator('[data-element-type="sticker"]')).toHaveCount(1);
+});
+
+test('edits Smart Grid items, columns, rows and logos', async ({ page }) => {
+  await toolbar(page).getByRole('button', { name: 'Smart Grid', exact: true }).click();
+  const grid = artwork(page).locator('[data-element-type="grid"]');
+  await expect(grid).toBeVisible();
+  await expect(grid).toContainText('Design');
+
+  await showPanel(page, 'Properties');
+  await expect(panel(page).getByRole('heading', { name: 'Smart Grid' })).toBeVisible();
+  await panel(page).getByLabel('Name 1', { exact: true }).fill('Alpha');
+  await panel(page).getByLabel('Subtitle (optional) 1', { exact: true }).fill('Design studio');
+  await expect(grid).toContainText('Alpha');
+  await expect(grid).toContainText('Design studio');
+
+  await panel(page).getByRole('button', { name: 'Add item', exact: true }).click();
+  await expect(panel(page).getByLabel(/^Name \d+$/)).toHaveCount(6);
+  await panel(page).getByLabel('Cards per row', { exact: true }).selectOption('2');
+  await expect(grid.locator(':scope > div > div')).toHaveCount(3);
+
+  await uploadImage(
+    page,
+    panel(page).getByRole('button', { name: 'Add logo', exact: true }).first(),
+    'logo.svg',
+    'L',
+  );
+  await expect(grid.locator('img')).toBeVisible();
+  await saved(page);
+
+  await page.reload();
+  const restored = artwork(page).locator('[data-element-type="grid"]');
+  await expect(restored).toContainText('Alpha');
+  await expect(restored).toContainText('Design studio');
+  await expect(restored.locator('img')).toBeVisible();
+  await expect(restored.locator(':scope > div > div')).toHaveCount(3);
+});
+
+test('applies letter spacing, case, outline, shadow and vertical alignment to text', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Add text', exact: true }).click();
+  await showPanel(page, 'Properties');
+  await panel(page).getByLabel('Text content', { exact: true }).fill('Styled text');
+  const spacing = panel(page).getByRole('spinbutton', { name: /^Letter spacing/ });
+  await spacing.fill('0.1');
+  await spacing.press('Enter');
+  await panel(page).getByLabel('Letter case', { exact: true }).selectOption('uppercase');
+  await panel(page).getByLabel('Vertical alignment', { exact: true }).selectOption('bottom');
+  await panel(page).getByLabel('Text outline', { exact: true }).check();
+  await panel(page).getByLabel('Shadow', { exact: true }).check();
+
+  const text = artwork(page).locator('[data-element-type="text"] > div').first();
+  await expect(text).toHaveAttribute('style', /letter-spacing: 0\.1em/);
+  await expect(text).toHaveAttribute('style', /text-transform: uppercase/);
+  await expect(text).toHaveAttribute('style', /-webkit-text-stroke: 2px/);
+  await expect(text).toHaveAttribute('style', /text-shadow:/);
+  await expect(text).toHaveAttribute('style', /justify-content: flex-end/);
+  await saved(page);
+
+  await page.reload();
+  const restored = artwork(page).locator('[data-element-type="text"] > div').first();
+  await expect(restored).toHaveAttribute('style', /letter-spacing: 0\.1em/);
+  await expect(restored).toHaveAttribute('style', /text-transform: uppercase/);
+  await expect(restored).toHaveAttribute('style', /-webkit-text-stroke: 2px/);
+  await expect(restored).toHaveAttribute('style', /text-shadow:/);
 });

@@ -1,16 +1,27 @@
-import { type CSSProperties, memo, useId } from 'react';
+import { type CSSProperties, memo, useId, useMemo } from 'react';
+import { encode } from 'uqr';
+import { smartGridRows } from '@/core/layout/balancedRows';
 import type {
   Design,
   DesignElement,
   Fill,
+  GridElement,
+  GridItem,
+  IconElement,
+  ImageElement,
   LineElement,
+  QrElement,
   ShapeElement,
+  StickerElement,
   TextStyle,
   Theme,
 } from '@/core/schema';
 import { resolveColor, resolveFont } from '@/core/schema';
 import { pointsToSvg, shapePoints } from '@/core/shapes';
-import { fillToCss } from './fill';
+import { stickerPath } from '@/core/stickers';
+import { useAssetUrl } from './assetUrl';
+import { ICON_COMPONENTS } from './icons';
+import { useFillCss } from './useFillCss';
 
 /** The same artwork is rendered in the editor and in every thumbnail, in document units. */
 export const PageArtwork = memo(function PageArtwork({
@@ -25,6 +36,7 @@ export const PageArtwork = memo(function PageArtwork({
   resolveSrc?: (source: string) => string | undefined;
 }) {
   const page = design.pages[pageIndex];
+  const background = useFillCss(page?.background, design.theme);
   return (
     <div
       className="relative overflow-hidden"
@@ -33,7 +45,7 @@ export const PageArtwork = memo(function PageArtwork({
         width: design.width,
         height: design.height,
         backgroundColor: 'white',
-        ...fillToCss(page?.background, design.theme, resolveSrc),
+        ...background,
       }}
     >
       {page?.elements
@@ -108,7 +120,8 @@ const ElementArtwork = memo(function ElementArtwork({
   invisible?: boolean;
   resolveSrc?: (source: string) => string | undefined;
 }) {
-  const shadow = e.type === 'shape' || e.type === 'image' ? e.shadow : undefined;
+  const shadow =
+    e.type === 'shape' || e.type === 'image' || e.type === 'sticker' ? e.shadow : undefined;
   return (
     <div
       data-element-id={e.id}
@@ -141,20 +154,11 @@ const ElementArtwork = memo(function ElementArtwork({
       )}
       {e.type === 'shape' && <ShapeArtwork element={e} theme={theme} />}
       {e.type === 'line' && <LineArtwork element={e} theme={theme} />}
-      {e.type === 'image' && resolveSrc?.(e.src) && (
-        <img
-          src={resolveSrc(e.src)}
-          alt={e.alt ?? ''}
-          draggable={false}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: e.fit,
-            borderRadius: e.radius,
-            transform: `scale(${e.flipX ? -1 : 1}, ${e.flipY ? -1 : 1})`,
-          }}
-        />
-      )}
+      {e.type === 'image' && <ImageArtwork element={e} theme={theme} resolveSrc={resolveSrc} />}
+      {e.type === 'icon' && <IconArtwork element={e} theme={theme} />}
+      {e.type === 'sticker' && <StickerArtwork element={e} theme={theme} />}
+      {e.type === 'qr' && <QrArtwork element={e} theme={theme} />}
+      {e.type === 'grid' && <GridArtwork element={e} theme={theme} resolveSrc={resolveSrc} />}
     </div>
   );
 });
@@ -194,7 +198,12 @@ function ShapeArtwork({ element: e, theme }: { element: ShapeElement; theme: The
   const stroke = e.stroke?.width ?? 0;
   const inset = stroke / 2;
   const props = {
-    fill: e.fill.type === 'solid' ? resolveColor(e.fill.color, theme) : `url(#${id})`,
+    fill:
+      e.fill.type === 'solid'
+        ? resolveColor(e.fill.color, theme)
+        : e.fill.type === 'image'
+          ? 'none'
+          : `url(#${id})`,
     stroke: e.stroke ? resolveColor(e.stroke.color, theme) : 'none',
     strokeWidth: stroke,
     strokeDasharray:
@@ -284,12 +293,337 @@ function LineArtwork({ element: e, theme }: { element: LineElement; theme: Theme
           strokeWidth={e.stroke.width}
           strokeLinecap="round"
           strokeDasharray={
-            e.stroke.dash === 'dashed' ? `${e.stroke.width * 4} ${e.stroke.width * 3}` : undefined
+            e.stroke.dash === 'dashed'
+              ? `${e.stroke.width * 4} ${e.stroke.width * 3}`
+              : e.stroke.dash === 'dotted'
+                ? `${e.stroke.width} ${e.stroke.width * 2}`
+                : undefined
           }
           markerStart={e.startCap !== 'none' ? `url(#${id}-start)` : undefined}
           markerEnd={e.endCap !== 'none' ? `url(#${id}-end)` : undefined}
         />
       </svg>
+    </div>
+  );
+}
+
+function ImageArtwork({
+  element: e,
+  theme,
+  resolveSrc,
+}: {
+  element: ImageElement;
+  theme: Theme;
+  resolveSrc?: (source: string) => string | undefined;
+}) {
+  const assetUrl = useAssetUrl(e.src);
+  const src = resolveSrc?.(e.src) ?? assetUrl;
+  if (!src)
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: e.radius,
+          background:
+            'repeating-linear-gradient(45deg, #e4e4e7, #e4e4e7 8px, #f4f4f5 8px, #f4f4f5 16px)',
+        }}
+      />
+    );
+  return (
+    <img
+      src={src}
+      alt={e.alt ?? ''}
+      draggable={false}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        objectFit: e.fit,
+        borderRadius: e.radius,
+        border: e.stroke
+          ? `${e.stroke.width}px ${e.stroke.dash ?? 'solid'} ${resolveColor(e.stroke.color, theme)}`
+          : undefined,
+        transform: `scale(${e.flipX ? -1 : 1}, ${e.flipY ? -1 : 1})`,
+      }}
+    />
+  );
+}
+
+function IconArtwork({ element: e, theme }: { element: IconElement; theme: Theme }) {
+  const Icon = ICON_COMPONENTS[e.icon];
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      <Icon
+        aria-hidden="true"
+        color={resolveColor(e.color, theme)}
+        strokeWidth={e.strokeWidth}
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
+  );
+}
+
+function StickerArtwork({ element: e, theme }: { element: StickerElement; theme: Theme }) {
+  const id = svgId(useId(), 'sticker');
+  const stroke = e.stroke?.width ?? 0;
+  const scale = 100 / Math.max(1, Math.min(e.width, e.height));
+  return (
+    <svg
+      aria-hidden="true"
+      width="100%"
+      height="100%"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ overflow: 'visible' }}
+    >
+      <defs>
+        <Gradient fill={e.fill} id={id} theme={theme} />
+      </defs>
+      <path
+        d={stickerPath(e.sticker)}
+        fill={
+          e.fill.type === 'solid'
+            ? resolveColor(e.fill.color, theme)
+            : e.fill.type === 'image'
+              ? 'none'
+              : `url(#${id})`
+        }
+        stroke={e.stroke ? resolveColor(e.stroke.color, theme) : 'none'}
+        strokeWidth={stroke * scale}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function QrArtwork({ element: e, theme }: { element: QrElement; theme: Theme }) {
+  const matrix = useMemo(() => {
+    try {
+      return encode(e.value, { ecc: e.ecLevel, border: e.margin ?? 2 });
+    } catch {
+      return null;
+    }
+  }, [e.value, e.ecLevel, e.margin]);
+  if (!matrix)
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f4f4f5',
+          color: '#71717a',
+          fontSize: Math.max(8, Math.min(e.width, e.height) * 0.08),
+        }}
+      >
+        QR
+      </div>
+    );
+  return (
+    <svg
+      aria-hidden="true"
+      width="100%"
+      height="100%"
+      viewBox={`0 0 ${matrix.size} ${matrix.size}`}
+      shapeRendering="crispEdges"
+    >
+      <rect width={matrix.size} height={matrix.size} fill={resolveColor(e.background, theme)} />
+      {matrix.data.map((row, y) =>
+        row.map((dark, x) =>
+          dark ? (
+            <rect
+              // biome-ignore lint/suspicious/noArrayIndexKey: QR modules form a fixed grid; each coordinate is a stable identity.
+              key={`${x}-${y}`}
+              x={x}
+              y={y}
+              width="1"
+              height="1"
+              fill={resolveColor(e.foreground, theme)}
+            />
+          ) : null,
+        ),
+      )}
+    </svg>
+  );
+}
+
+function GridArtwork({
+  element: e,
+  theme,
+  resolveSrc,
+}: {
+  element: GridElement;
+  theme: Theme;
+  resolveSrc?: (source: string) => string | undefined;
+}) {
+  const cardBackground = useFillCss(e.cardFill, theme);
+  const rows = smartGridRows(e.items.length, e.columns);
+  const border =
+    e.cardStroke && e.cardStroke.width > 0
+      ? `${e.cardStroke.width}px ${e.cardStroke.dash ?? 'solid'} ${resolveColor(e.cardStroke.color, theme)}`
+      : undefined;
+  const shadow = e.shadow
+    ? `${e.shadow.offsetX}px ${e.shadow.offsetY}px ${e.shadow.blur}px ${resolveColor(e.shadow.color, theme)}`
+    : undefined;
+  if (!e.items.length)
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: '2px dashed #a1a1aa',
+          borderRadius: e.cardRadius,
+          boxSizing: 'border-box',
+        }}
+      />
+    );
+  let index = 0;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: e.gap,
+        padding: e.padding,
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      {rows.map((count, rowIndex) => {
+        const items = e.items.slice(index, index + count);
+        index += count;
+        return (
+          <div
+            key={rows.slice(0, rowIndex + 1).join('-')}
+            style={{
+              display: 'flex',
+              gap: e.gap,
+              flex: 1,
+              minHeight: 0,
+              justifyContent: 'center',
+            }}
+          >
+            {items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  ...cardBackground,
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: Math.max(1, e.cardPadding * 0.25),
+                  padding: e.cardPadding,
+                  borderRadius: e.cardRadius,
+                  border,
+                  boxShadow: shadow,
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                }}
+              >
+                <GridLogo item={item} height={e.logoHeight} theme={theme} resolveSrc={resolveSrc} />
+                <div
+                  style={{
+                    fontFamily: `${JSON.stringify(resolveFont(e.nameStyle.fontFamily, theme))}, sans-serif`,
+                    fontSize: e.nameStyle.fontSize,
+                    fontWeight: e.nameStyle.fontWeight,
+                    color: resolveColor(e.nameStyle.color, theme),
+                    lineHeight: 1.15,
+                    textAlign: 'center',
+                    overflow: 'hidden',
+                    overflowWrap: 'anywhere',
+                    maxWidth: '100%',
+                  }}
+                >
+                  {item.name || '\u00a0'}
+                </div>
+                {item.subtitle && (
+                  <div
+                    style={{
+                      fontFamily: `${JSON.stringify(resolveFont(e.subtitleStyle.fontFamily, theme))}, sans-serif`,
+                      fontSize: e.subtitleStyle.fontSize,
+                      fontWeight: e.subtitleStyle.fontWeight,
+                      color: resolveColor(e.subtitleStyle.color, theme),
+                      lineHeight: 1.2,
+                      textAlign: 'center',
+                      overflow: 'hidden',
+                      overflowWrap: 'anywhere',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    {item.subtitle}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function GridLogo({
+  item,
+  height,
+  theme,
+  resolveSrc,
+}: {
+  item: GridItem;
+  height: number;
+  theme: Theme;
+  resolveSrc?: (source: string) => string | undefined;
+}) {
+  const assetUrl = useAssetUrl(item.logoSrc);
+  const src = item.logoSrc ? (resolveSrc?.(item.logoSrc) ?? assetUrl) : undefined;
+  if (src)
+    return (
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        style={{ height, maxWidth: '100%', objectFit: 'contain', flex: '0 0 auto' }}
+      />
+    );
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        height,
+        width: height,
+        flex: '0 0 auto',
+        borderRadius: '50%',
+        background: resolveColor('$primary', theme),
+        color: '#ffffff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: height * 0.42,
+        fontWeight: 700,
+        lineHeight: 1,
+      }}
+    >
+      {item.name.trim().charAt(0).toLocaleUpperCase() || '\u2022'}
     </div>
   );
 }

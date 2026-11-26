@@ -54,3 +54,8 @@ export function uniformRows(total: number, perRow: number): number[] {
   }
   return rows;
 }
+
+/** Row sizes for the Smart Grid: classic balanced rows unless a fixed column count is chosen. */
+export function smartGridRows(total: number, columns?: number): number[] {
+  return columns ? uniformRows(total, columns) : classicRows(total);
+}

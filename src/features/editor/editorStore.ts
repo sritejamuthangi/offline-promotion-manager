@@ -34,6 +34,7 @@ export interface EditorState {
   undo: () => void;
   redo: () => void;
   insert: (kind: InsertKind, text: string) => void;
+  insertElement: (element: DesignElement) => void;
   updateSelected: (recipe: (element: Draft<DesignElement>) => void) => void;
   removeSelected: () => void;
   duplicateSelected: () => void;
@@ -158,6 +159,12 @@ export function createEditorStore(initial: Design, clock: () => number = Date.no
       },
       insert: (kind, text) => {
         const element = createElement(kind, get().doc, text);
+        get().edit((d) => {
+          d.pages[get().pageIndex]?.elements.push(element);
+        });
+        get().select([element.id]);
+      },
+      insertElement: (element) => {
         get().edit((d) => {
           d.pages[get().pageIndex]?.elements.push(element);
         });

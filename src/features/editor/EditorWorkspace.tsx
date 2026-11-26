@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Keyboard, Redo2, Undo2, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ThemeMenu } from '@/app/theme';
@@ -14,17 +14,33 @@ import {
 } from '@/components/ui/dialog';
 import { NativeSelect } from '@/components/ui/native-select';
 import type { InsertKind } from '@/core/design/elements';
+import {
+  createGridElement,
+  createGridItem,
+  createIconElement,
+  createImageElement,
+  createQrElement,
+  createStickerElement,
+} from '@/core/design/elements';
 import { duplicateDesign } from '@/core/design/factory';
-import { type Design, MAX_NAME_LENGTH } from '@/core/schema';
+import {
+  type Design,
+  type DesignElement,
+  type IconName,
+  MAX_NAME_LENGTH,
+  type StickerName,
+} from '@/core/schema';
 import { useMediaQuery } from '@/lib/hooks';
-import { designRepository } from '@/storage';
+import { assetRepository, designRepository } from '@/storage';
 import { DesignConflictError, DesignNotFoundError } from '@/storage/repositories';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorProvider, useEditor, useEditorStore } from './EditorContext';
 import { type EditorPanel, EditorToolbar } from './EditorToolbar';
+import { ElementsDialog } from './ElementsDialog';
 import { createEditorStore } from './editorStore';
 import { Inspector } from './Inspector';
 import { LayersPanel } from './LayersPanel';
+import { QrDialog } from './QrDialog';
 import { useEditorPersistence } from './useEditorPersistence';
 import { useEditorShortcuts } from './useEditorShortcuts';
 
@@ -55,6 +71,9 @@ function Workspace() {
   const largeScreen = useMediaQuery('(min-width: 1024px)');
   const visiblePanel = panelOpen ?? largeScreen;
   const [help, setHelp] = useState(false);
+  const [elementsOpen, setElementsOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const imageInput = useRef<HTMLInputElement>(null);
   const { state: saveState, flush } = useEditorPersistence(store);
   const insert = useCallback(
     (kind: InsertKind) => {
@@ -64,6 +83,68 @@ function Workspace() {
       store.getState().insert(kind, t('editor.defaultText'));
     },
     [store, t],
+  );
+  const insertElement = useCallback(
+    (element: DesignElement) => {
+      store.getState().commit();
+      setEditing(null);
+      setHand(false);
+      store.getState().insertElement(element);
+    },
+    [store],
+  );
+  const addImage = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(t('editor.imageError'));
+        return;
+      }
+      try {
+        const asset = await assetRepository.add({
+          blob: file,
+          name: file.name,
+          type: file.type,
+        });
+        insertElement(
+          createImageElement(store.getState().doc, {
+            src: `asset:${asset.id}`,
+            width: asset.width,
+            height: asset.height,
+            alt: file.name,
+          }),
+        );
+      } catch {
+        toast.error(t('editor.imageError'));
+      }
+    },
+    [insertElement, store, t],
+  );
+  const addGrid = useCallback(() => {
+    const names = [
+      t('editor.gridSample.design'),
+      t('editor.gridSample.print'),
+      t('editor.gridSample.brand'),
+      t('editor.gridSample.web'),
+      t('editor.gridSample.photo'),
+    ];
+    insertElement(
+      createGridElement(
+        store.getState().doc,
+        names.map((name) => createGridItem(name)),
+      ),
+    );
+  }, [insertElement, store, t]);
+  const addIcon = useCallback(
+    (icon: IconName) => insertElement(createIconElement(store.getState().doc, icon)),
+    [insertElement, store],
+  );
+  const addSticker = useCallback(
+    (sticker: StickerName) => insertElement(createStickerElement(store.getState().doc, sticker)),
+    [insertElement, store],
+  );
+  const addQr = useCallback(
+    (value: string) => insertElement(createQrElement(store.getState().doc, value)),
+    [insertElement, store],
   );
   useEditorShortcuts({ store, setSpace, setEditing, insert, save: flush });
 
@@ -89,6 +170,18 @@ function Workspace() {
 
   return (
     <div className="flex h-dvh min-w-0 flex-col overflow-hidden bg-background" data-testid="editor">
+      <input
+        ref={imageInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        aria-label={t('editor.addImage')}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) void addImage(file);
+        }}
+      />
       <header className="flex h-14 shrink-0 items-center gap-1 border-b px-2 sm:gap-2 sm:px-4">
         <Button asChild variant="ghost" size="icon">
           <Link
@@ -191,6 +284,10 @@ function Workspace() {
         panelOpen={visiblePanel}
         openPanel={openPanel}
         insert={insert}
+        onAddImage={() => imageInput.current?.click()}
+        onOpenElements={() => setElementsOpen(true)}
+        onOpenQr={() => setQrOpen(true)}
+        onAddGrid={addGrid}
       />
       <main className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
         <EditorCanvas
@@ -292,6 +389,13 @@ function Workspace() {
           </dl>
         </DialogContent>
       </Dialog>
+      <ElementsDialog
+        open={elementsOpen}
+        onOpenChange={setElementsOpen}
+        onInsertIcon={addIcon}
+        onInsertSticker={addSticker}
+      />
+      <QrDialog open={qrOpen} onOpenChange={setQrOpen} onInsert={addQr} />
     </div>
   );
 }
