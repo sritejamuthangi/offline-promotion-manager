@@ -3,6 +3,7 @@ import { expect, type Page, test } from '@playwright/test';
 const cards = (page: Page) => page.getByTestId('design-card');
 
 async function openMenu(page: Page, designName: string) {
+  await expect(page.getByRole('menu')).toHaveCount(0);
   await page.getByRole('button', { name: `More actions: ${designName}`, exact: true }).click();
 }
 

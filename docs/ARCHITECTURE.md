@@ -18,7 +18,7 @@ undoing them.
 ```
 features/ (React screens)  ─┐
 components/ (UI kit)        ├─> storage/ (repositories) ─> IndexedDB
-render/ (data -> CSS)       │
+render/ (data -> HTML/SVG)  │
                             └─> core/ (pure TypeScript: schema, units, sizes, layout)
 ```
 
@@ -58,11 +58,35 @@ change.
 - The app asks the browser for **persistent storage** after the first design is created, so the
   browser does not silently clear designs when the device runs low on space.
 - Database structure changes are added as new Dexie versions; existing versions are never edited.
+- Editor writes use `saveEdited(design, expectedUpdatedAt)` inside one IndexedDB transaction.
+  A stale revision or deleted source is rejected. Revision timestamps advance monotonically,
+  even when edits happen in the same millisecond. The editor offers a new copy for recovery.
 
-## Rendering and printing (planned)
+## Editor
 
-Designs will be drawn with HTML and SVG rather than a bitmap canvas. One renderer serves the
-editor, thumbnails, printing and export:
+`src/features/editor` owns one isolated Zustand store per open design. Immer keeps immutable,
+structurally shared snapshots for up to 100 undo steps. Pointer transforms, text-field edits and
+held arrow-key nudges are transactions: intermediate frames render immediately, then commit as
+one history entry. Escape can cancel an unfinished gesture or inline edit.
+
+Document geometry stays in CSS pixels; the inspector converts it to the chosen display unit.
+Pure helpers in `src/core` implement rotated bounds, anchored resize, group transforms, snapping,
+alignment/distribution and stable layer ordering. Selection and viewport state are not saved in
+the design. Zoom is cursor-anchored; touch gestures cancel a tentative element drag before panning
+or zooming the viewport.
+
+The autosave queue debounces completed edits and serializes writes, so a slow older write cannot
+overwrite a newer one. It flushes on navigation, visibility changes and page exit. Browser unload
+cannot guarantee asynchronous persistence, so unsaved work triggers the browser's unload prompt.
+Save failures retain the pending snapshot for retry. The open editor survives an external deletion
+so that its local work can still be saved as a copy.
+
+## Rendering and printing
+
+`src/render/PageArtwork.tsx` draws text, shapes and lines with HTML and SVG. Both the editor and
+home-screen thumbnails use it at document scale; the surrounding viewport applies scaling. Fonts,
+fills and geometry therefore agree between views. Images and richer styling are developed in
+step 3; printing and exports are planned for step 6:
 
 - Printing uses the browser's own print engine with CSS `@page` sizes, which keeps text and shapes
   sharp at any size (Chrome/Edge, Firefox 95+, Safari 18.2+).
@@ -70,7 +94,8 @@ editor, thumbnails, printing and export:
   and "Save as PDF" in the print dialog produces true vector PDFs.
 - Image exports (PNG, JPG and one-click PDF) render the same DOM at the chosen DPI.
 
-`src/render/fill.ts` is the first piece of this renderer.
+`src/render/fill.ts` resolves background fills, and shared typography lives alongside the artwork
+renderer. Editor overlays (selection, guides, handles and text input) are separate from artwork.
 
 ## Internationalisation
 
@@ -90,5 +115,6 @@ any sub-folder without server rewrite rules. Screens other than home load on dem
 
 - **Unit tests** (Vitest) for everything in `core`, `storage` (against an in-memory IndexedDB),
   and pure helpers.
-- **Browser tests** (Playwright) for user flows, on a desktop and a phone-sized screen.
+- **Browser tests** (Playwright) for home/editor flows on desktop and phone-sized screens, including
+  pointer transforms, real emulated touch gestures, undo, persistence and cross-tab recovery.
 - `npm run check` runs lint, type-check and unit tests; CI runs everything on every push.

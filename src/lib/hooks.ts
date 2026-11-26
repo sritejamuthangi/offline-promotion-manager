@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { type RefObject, useEffect, useState, useSyncExternalStore } from 'react';
 
 /** Tracks a CSS media query, e.g. `(prefers-color-scheme: dark)`. */
 export function useMediaQuery(query: string): boolean {
@@ -21,4 +21,25 @@ export function useNow(intervalMs: number): number {
     return () => window.clearInterval(timer);
   }, [intervalMs]);
   return now;
+}
+
+/** Measures the available viewport, including changes caused by responsive side panels. */
+export function useElementSize(ref: RefObject<HTMLElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect)
+        setSize((old) =>
+          old.width === rect.width && old.height === rect.height
+            ? old
+            : { width: rect.width, height: rect.height },
+        );
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
 }
