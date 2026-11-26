@@ -1,11 +1,12 @@
 import { Link, Outlet } from '@tanstack/react-router';
-import { Settings, ShieldCheck } from 'lucide-react';
+import { LayoutTemplate, Settings, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP } from '@/config/app';
+import { PageSeo } from '@/seo/PageSeo';
 import { AboutDialog, useAboutDialog } from './about';
 import { ThemeMenu, ThemeSync } from './theme';
 
@@ -13,6 +14,7 @@ import { ThemeMenu, ThemeSync } from './theme';
 export function RootLayout() {
   return (
     <>
+      <PageSeo />
       <ThemeSync />
       <Outlet />
       <AboutDialog />
@@ -48,6 +50,12 @@ function SiteHeader() {
           <span className="hidden truncate sm:inline">{APP.name}</span>
         </Link>
         <nav aria-label={t('nav.mainNavigation')} className="ms-auto flex items-center gap-1">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/templates" activeProps={{ 'aria-current': 'page' }}>
+              <LayoutTemplate />
+              {t('nav.templates')}
+            </Link>
+          </Button>
           <ThemeMenu />
           <Tooltip>
             <TooltipTrigger asChild>

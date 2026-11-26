@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Magnet,
   MousePointer2,
+  Palette,
   QrCode,
   SlidersHorizontal,
   Sparkles,
@@ -27,7 +28,7 @@ import type { InsertKind } from '@/core/design/elements';
 import { SHAPE_KINDS } from '@/core/schema';
 import { useEditor, useEditorStore } from './EditorContext';
 
-export type EditorPanel = 'properties' | 'layers';
+export type EditorPanel = 'properties' | 'layers' | 'styles';
 
 export function EditorToolbar({
   hand,
@@ -40,7 +41,7 @@ export function EditorToolbar({
   panelOpen,
   openPanel,
   insert,
-  onAddImage,
+  onOpenImages,
   onOpenElements,
   onOpenQr,
   onAddGrid,
@@ -55,7 +56,7 @@ export function EditorToolbar({
   panelOpen: boolean;
   openPanel: (panel: EditorPanel) => void;
   insert: (kind: InsertKind) => void;
-  onAddImage: () => void;
+  onOpenImages: () => void;
   onOpenElements: () => void;
   onOpenQr: () => void;
   onAddGrid: () => void;
@@ -123,9 +124,9 @@ export function EditorToolbar({
       <Button size="sm" variant="ghost" onClick={() => insert('line')}>
         {t('editor.addLine')}
       </Button>
-      <Button size="sm" variant="ghost" onClick={onAddImage}>
+      <Button size="sm" variant="ghost" onClick={onOpenImages}>
         <ImagePlus />
-        {t('editor.addImage')}
+        {t('editor.images')}
       </Button>
       <Button size="sm" variant="ghost" onClick={onOpenElements}>
         <Sparkles />
@@ -188,6 +189,15 @@ export function EditorToolbar({
       >
         <Layers />
         {t('editor.layers')}
+      </Button>
+      <Button
+        size="sm"
+        variant={panelOpen && panel === 'styles' ? 'secondary' : 'ghost'}
+        aria-pressed={panelOpen && panel === 'styles'}
+        onClick={() => openPanel('styles')}
+      >
+        <Palette />
+        {t('editor.styles')}
       </Button>
     </div>
   );

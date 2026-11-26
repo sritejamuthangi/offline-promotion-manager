@@ -27,12 +27,14 @@ balanced card layout of that first version lives on in the Smart Grid element.
 - [x] **Step 1: saving and home screen.** Create designs in about 50 preset sizes or any custom size; rename, duplicate, delete with undo, Recently deleted; light and dark theme; settings.
 - [x] **Step 2: editor.** Text, seven shapes and lines; select, move, resize, rotate, snapping guides, alignment/distribution, layers, undo/redo, local autosave, pan/zoom and touch gestures.
 - [x] **Step 3: elements.** Images, outline icons, stickers, QR codes (links, Wi‑Fi, email, calls, messages and UPI payments), Smart Grid with logos, image fills, borders, shadows and richer text styling.
-- [ ] **Step 4: content system.** Template catalogue, one-click colour and font styles, built-in image library, optional free image search (Openverse, Wikimedia Commons), save as template.
+- [x] **Step 4: content system.** Searchable template catalogue with 14 starter designs, 20 colour palettes, 14 font pairings, built-in graphics, optional Openverse/Wikimedia Commons image search and local save-as-template.
 - [ ] **Step 5: starter library.** About 50 templates across business, education, events, greetings, food, signs and social media.
 - [ ] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
 - [ ] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
 
 ## Getting started
+
+Public site: **https://opm.sritejam.com**.
 
 You need [Node.js](https://nodejs.org/) 22.12 or newer.
 
@@ -51,8 +53,11 @@ typography, colours, gradients, borders and shadows. **Layers** lets you select 
 elements, change their order, hide them or lock them. On phones and tablets, these panels open
 below the canvas; use two fingers to pan and zoom.
 
-**Images** are added from your device and stored in the browser's own database, so they never leave
-it. Identical files are stored once, and images keep working after a reload. **Elements** offers a
+**Images** lets you upload from your device, reuse a previous upload, pick one of 33 built-in
+graphics or search Openverse/Wikimedia Commons. Chosen online images are downloaded into the local
+database with their source, licence and credit; **Properties → Credit** can add a credit line to
+the page. Online search is enabled by default and can be turned off in **Settings**. Built-in
+graphics follow the design's colours. Identical uploads are stored once. **Elements** offers a
 curated set of outline icons and decorative stickers. **QR code** creates a scannable code for a
 website, plain text, Wi‑Fi network, email, phone call, text message or UPI payment; the encoded
 content can still be edited afterwards in Properties. **Smart Grid** recreates the balanced company
@@ -67,6 +72,17 @@ fill.
 Each completed edit saves automatically on this device. The header shows save status; if storage
 fails, use **Retry save**. If another tab changes or deletes the same design, **Save as a copy**
 preserves your version. Returning home flushes the latest edit and updates the design thumbnail.
+
+### Templates and styles
+
+Browse **Templates**, search by name or subject, or choose a category. Each bundled template has
+a shareable public page and adapts to A4 or US paper sizes. **Use this template** creates a fully
+editable local design. **Styles** applies one-click colour palettes and heading/body font pairings;
+15 bundled fonts are available in the font picker. Custom colours and fonts remain editable.
+
+Use **Save as template** in the editor header or a home-screen design menu. It stores an independent
+snapshot under **Your templates**. Rename or delete saved templates from their preview, or start
+as many new designs from them as you like.
 
 | Action                                | Control                                                                |
 | ------------------------------------- | ---------------------------------------------------------------------- |
@@ -102,9 +118,13 @@ Otherwise run `npx playwright install chromium` once.
 
 ### Hosting
 
-`npm run build` produces plain static files in `dist/`. Host them anywhere: Vercel, Netlify,
-GitHub Pages, Cloudflare Pages or any web server. The app uses relative paths and `#/` URLs, so it
-also works from a sub-folder without any server configuration.
+`npm run build` produces static files in `dist/`, including pre-rendered home, catalogue, category,
+template and settings pages. Public URLs use clean paths, with metadata and a sitemap targeting
+**https://opm.sritejam.com**. Old `/#/…` bookmarks still open their corresponding pages.
+
+Vercel routing is in `vercel.json`; Netlify/Cloudflare Pages rules are generated in `dist/_redirects`.
+Configure the host's custom domain and DNS for `opm.sritejam.com`. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for other hosts, sub-folder builds and indexing setup.
 
 ## How it is built
 
@@ -112,11 +132,11 @@ also works from a sub-folder without any server configuration.
 | ------------ | ----------------------------------------------------------- |
 | Build        | Vite 8, TypeScript 7 (strict)                               |
 | UI           | React 19, Tailwind CSS 4, Radix UI primitives, lucide icons |
-| Routing      | TanStack Router (hash URLs, lazy-loaded screens)            |
+| Routing      | TanStack Router (clean URLs, lazy-loaded screens)           |
 | State        | Zustand with Immer snapshots for undo/redo                  |
 | Storage      | IndexedDB through Dexie, behind repository interfaces       |
-| Images       | Local blobs in IndexedDB, deduplicated by SHA-256            |
-| QR codes     | `uqr` (MIT), with pure payload builders in `core`            |
+| Images       | Local blobs in IndexedDB, deduplicated by SHA-256           |
+| QR codes     | `uqr` (MIT), with pure payload builders in `core`           |
 | File format  | Versioned JSON validated with Zod, with migrations          |
 | Translations | i18next with type-checked keys                              |
 | Quality      | Biome (lint and format), Vitest, Playwright, GitHub Actions |
@@ -124,12 +144,15 @@ also works from a sub-folder without any server configuration.
 ```
 src/
   core/        Pure TypeScript: design format, units, paper sizes, layout, QR payloads. No React, fully tested.
+  content/     Templates, palettes, font pairings and offline graphics.
   storage/     IndexedDB database and repositories (swap in a server database later).
   features/    Screens: home, design, editor, settings.
   components/  Shared UI components.
   render/      Shared HTML/SVG artwork for editor and thumbnails; printing follows.
   i18n/        Translations.
   app/         App shell, routing, theme.
+  seo/         Public-page metadata and build-time HTML generation.
+scripts/       Static page and sitemap build.
 tests/e2e/     Browser tests.
 docs/          Architecture notes.
 ```
@@ -149,9 +172,19 @@ The app has no backend. It does not collect analytics, set tracking cookies, or 
 anywhere. Everything is stored in your browser on your device, so clearing the site's data in your
 browser deletes your designs. A backup and restore feature is planned.
 
+Optional online image search sends your search words to the selected provider. Results and image
+downloads contact the provider and image hosts. Requests omit credentials and referrers; your
+designs and uploaded files are never sent. Turn off **Online image search** in Settings to disable
+this feature. Editing and bundled content use local resources; installable offline caching is
+planned for step 7.
+
 ## License
 
 [MIT](LICENSE). Free to use, change and share.
+
+Bundled fonts use SIL Open Font License 1.1; lucide icons and `uqr` retain their own open-source
+licences. The build includes their full licence texts in `THIRD-PARTY-NOTICES.txt`. Online images
+retain the licences shown by their source.
 
 ---
 

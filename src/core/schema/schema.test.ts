@@ -33,7 +33,9 @@ describe('createDesign', () => {
     expect(design.name).toBe('Poster');
     expect(design.schemaVersion).toBe(SCHEMA_VERSION);
     expect(design.pages).toHaveLength(1);
-    expect(design.pages[0]?.background).toEqual({ type: 'solid', color: '#ffffff' });
+    // The page follows the theme, so one-click palettes restyle it too.
+    expect(design.pages[0]?.background).toEqual({ type: 'solid', color: '$background' });
+    expect(resolveColor('$background', design.theme)).toBe('#ffffff');
     expect(design.meta.locale).toBe('en-IN');
     expect(design.deletedAt).toBeUndefined();
   });

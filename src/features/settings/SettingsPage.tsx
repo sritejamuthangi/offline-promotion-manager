@@ -1,4 +1,4 @@
-import { HardDrive, Info, Monitor, Moon, ShieldAlert, ShieldCheck, Sun } from 'lucide-react';
+import { Globe, HardDrive, Info, Monitor, Moon, ShieldAlert, ShieldCheck, Sun } from 'lucide-react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ export function SettingsPage() {
       <div className="mt-8 grid gap-6">
         <AppearanceCard />
         <MeasurementsCard />
+        <OnlineCard />
         <StorageCard />
         <AboutCard />
       </div>
@@ -117,6 +118,42 @@ function MeasurementsCard() {
             <option value="a4">{t('settings.paperA4')}</option>
             <option value="letter">{t('settings.paperLetter')}</option>
           </NativeSelect>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function OnlineCard() {
+  const { t } = useTranslation();
+  const imageSearch = useSettings((s) => s.imageSearch);
+  const setImageSearch = useSettings((s) => s.setImageSearch);
+  const id = useId();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="size-4 text-muted-foreground" aria-hidden="true" />
+          {t('settings.onlineTitle')}
+        </CardTitle>
+        <CardDescription>{t('settings.onlineDescription')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-start gap-3">
+          <input
+            id={id}
+            type="checkbox"
+            className="mt-1 size-4 accent-primary"
+            checked={imageSearch}
+            aria-describedby={`${id}-hint`}
+            onChange={(event) => setImageSearch(event.target.checked)}
+          />
+          <div className="grid gap-1">
+            <Label htmlFor={id}>{t('settings.imageSearch')}</Label>
+            <p id={`${id}-hint`} className="text-muted-foreground text-sm">
+              {t('settings.imageSearchHint')}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

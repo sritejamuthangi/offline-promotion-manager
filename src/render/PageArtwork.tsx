@@ -1,5 +1,6 @@
 import { type CSSProperties, memo, useId, useMemo } from 'react';
 import { encode } from 'uqr';
+import { fontStack } from '@/core/fonts';
 import { smartGridRows } from '@/core/layout/balancedRows';
 import type {
   Design,
@@ -19,8 +20,8 @@ import type {
 import { resolveColor, resolveFont } from '@/core/schema';
 import { pointsToSvg, shapePoints } from '@/core/shapes';
 import { stickerPath } from '@/core/stickers';
-import { useAssetUrl } from './assetUrl';
 import { ICON_COMPONENTS } from './icons';
+import { useImageSrc } from './imageSource';
 import { useFillCss } from './useFillCss';
 
 /** The same artwork is rendered in the editor and in every thumbnail, in document units. */
@@ -36,7 +37,7 @@ export const PageArtwork = memo(function PageArtwork({
   resolveSrc?: (source: string) => string | undefined;
 }) {
   const page = design.pages[pageIndex];
-  const background = useFillCss(page?.background, design.theme);
+  const background = useFillCss(page?.background, design.theme, design);
   return (
     <div
       className="relative overflow-hidden"
@@ -80,7 +81,7 @@ export function elementFrame(
 
 export function textCss(style: TextStyle, theme: Theme): CSSProperties {
   return {
-    fontFamily: `${JSON.stringify(resolveFont(style.fontFamily, theme))}, sans-serif`,
+    fontFamily: fontStack(resolveFont(style.fontFamily, theme)),
     fontSize: style.fontSize,
     fontWeight: style.fontWeight,
     fontStyle: style.italic ? 'italic' : 'normal',
@@ -316,8 +317,8 @@ function ImageArtwork({
   theme: Theme;
   resolveSrc?: (source: string) => string | undefined;
 }) {
-  const assetUrl = useAssetUrl(e.src);
-  const src = resolveSrc?.(e.src) ?? assetUrl;
+  const imageUrl = useImageSrc(e.src, theme, e);
+  const src = resolveSrc?.(e.src) ?? imageUrl;
   if (!src)
     return (
       <div
@@ -544,7 +545,7 @@ function GridArtwork({
                 <GridLogo item={item} height={e.logoHeight} theme={theme} resolveSrc={resolveSrc} />
                 <div
                   style={{
-                    fontFamily: `${JSON.stringify(resolveFont(e.nameStyle.fontFamily, theme))}, sans-serif`,
+                    fontFamily: fontStack(resolveFont(e.nameStyle.fontFamily, theme)),
                     fontSize: e.nameStyle.fontSize,
                     fontWeight: e.nameStyle.fontWeight,
                     color: resolveColor(e.nameStyle.color, theme),
@@ -560,7 +561,7 @@ function GridArtwork({
                 {item.subtitle && (
                   <div
                     style={{
-                      fontFamily: `${JSON.stringify(resolveFont(e.subtitleStyle.fontFamily, theme))}, sans-serif`,
+                      fontFamily: fontStack(resolveFont(e.subtitleStyle.fontFamily, theme)),
                       fontSize: e.subtitleStyle.fontSize,
                       fontWeight: e.subtitleStyle.fontWeight,
                       color: resolveColor(e.subtitleStyle.color, theme),
@@ -594,8 +595,8 @@ function GridLogo({
   theme: Theme;
   resolveSrc?: (source: string) => string | undefined;
 }) {
-  const assetUrl = useAssetUrl(item.logoSrc);
-  const src = item.logoSrc ? (resolveSrc?.(item.logoSrc) ?? assetUrl) : undefined;
+  const imageUrl = useImageSrc(item.logoSrc, theme);
+  const src = item.logoSrc ? (resolveSrc?.(item.logoSrc) ?? imageUrl) : undefined;
   if (src)
     return (
       <img

@@ -193,6 +193,25 @@ export const ICON_NAMES = [
   'home',
   'car',
   'plane',
+  // Added with templates: new names are additive, so older designs stay valid.
+  'wifi',
+  'tag',
+  'percent',
+  'ticket',
+  'cake',
+  'pizza',
+  'award',
+  'store',
+  'circle-check',
+  'info',
+  'triangle-alert',
+  'bell',
+  'link',
+  'at-sign',
+  'smartphone',
+  'printer',
+  'quote',
+  'school',
 ] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 

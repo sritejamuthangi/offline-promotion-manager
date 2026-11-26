@@ -25,7 +25,7 @@ test('home screen introduces the app and credits the author', async ({ page }) =
 test('create, rename, duplicate, delete, undo and restore designs', async ({ page }) => {
   // One click creates an A4 design (the test browser uses a British locale).
   await page.getByTestId('quick-create-a4').click();
-  await expect(page).toHaveURL(/#\/design\/[0-9a-f-]{36}$/);
+  await expect(page).toHaveURL(/\/design\/[0-9a-f-]{36}$/);
 
   // Rename in place on the design page.
   const nameField = page.getByRole('textbox', { name: 'Design name' });
@@ -99,7 +99,7 @@ test('custom sizes are created exactly and invalid sizes are refused', async ({ 
   await dialog.getByLabel('Width').fill('100');
   await dialog.getByLabel('Height').fill('50');
   await dialog.getByRole('button', { name: 'Create design' }).click();
-  await expect(page).toHaveURL(/#\/design\//);
+  await expect(page).toHaveURL(/\/design\//);
   await page.getByRole('link', { name: 'Back to home' }).click();
   await expect(cards(page).first()).toContainText('100 × 50 mm');
 });
@@ -110,7 +110,7 @@ test('presets can be rotated to landscape', async ({ page }) => {
   await dialog.getByRole('radio', { name: 'Posters & flyers' }).click();
   await dialog.getByRole('radio', { name: 'Landscape' }).click();
   await dialog.getByTestId('preset-poster-a2').click();
-  await expect(page).toHaveURL(/#\/design\//);
+  await expect(page).toHaveURL(/\/design\//);
   await page.getByRole('link', { name: 'Back to home' }).click();
   await expect(cards(page).first()).toContainText('594 × 420 mm');
 });
@@ -137,9 +137,9 @@ test('about dialog explains privacy and credits the author', async ({ page }) =>
 });
 
 test('unknown pages and designs show a helpful message', async ({ page }) => {
-  await page.goto('./#/no-such-page');
+  await page.goto('./no-such-page');
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
-  await page.goto('./#/design/does-not-exist');
+  await page.goto('./design/does-not-exist');
   await expect(page.getByRole('heading', { name: 'Design not found' })).toBeVisible();
 });
 

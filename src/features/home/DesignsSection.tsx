@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import type { Design } from '@/core/schema';
+import { SaveTemplateDialog } from '@/features/templates/SaveTemplateDialog';
 import { useNow } from '@/lib/hooks';
 import { useDeletedDesigns, useDesigns } from '@/storage/hooks';
 import { DesignCard } from './DesignCard';
@@ -25,6 +26,7 @@ export function DesignsSection() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DesignSort>('updated');
   const [renaming, setRenaming] = useState<Design | null>(null);
+  const [savingTemplate, setSavingTemplate] = useState<Design | null>(null);
   const searchId = useId();
   const sortId = useId();
 
@@ -102,7 +104,12 @@ export function DesignsSection() {
         <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {visible.map((design) => (
             <li key={design.id}>
-              <DesignCard design={design} now={now} onRename={setRenaming} />
+              <DesignCard
+                design={design}
+                now={now}
+                onRename={setRenaming}
+                onSaveTemplate={setSavingTemplate}
+              />
             </li>
           ))}
         </ul>
@@ -111,6 +118,7 @@ export function DesignsSection() {
       {deleted && deleted.length > 0 && <RecentlyDeleted designs={deleted} now={now} />}
 
       <RenameDialog design={renaming} onClose={() => setRenaming(null)} />
+      <SaveTemplateDialog design={savingTemplate} onClose={() => setSavingTemplate(null)} />
     </section>
   );
 }

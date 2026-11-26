@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Copy, Ellipsis, Pencil, SquareArrowOutUpRight, Trash } from 'lucide-react';
+import { BookmarkPlus, Copy, Ellipsis, Pencil, SquareArrowOutUpRight, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,10 +19,12 @@ export function DesignCard({
   design,
   now,
   onRename,
+  onSaveTemplate,
 }: {
   design: Design;
   now: number;
   onRename: (design: Design) => void;
+  onSaveTemplate: (design: Design) => void;
 }) {
   const { t, i18n } = useTranslation();
   const actions = useDesignActions();
@@ -78,6 +80,10 @@ export function DesignCard({
           <DropdownMenuItem onSelect={() => void actions.duplicate(design)}>
             <Copy />
             {t('common.duplicate')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onSaveTemplate(design)}>
+            <BookmarkPlus />
+            {t('editor.saveAsTemplate')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => void actions.remove(design)}>

@@ -32,7 +32,10 @@ export function cleanDesignName(name: string, fallback: string = DEFAULT_DESIGN_
   return trimmed.slice(0, MAX_NAME_LENGTH);
 }
 
-/** Creates a new single-page design with a white background. */
+/**
+ * Creates a new single-page design. The page uses the theme's background colour (white by
+ * default), so choosing a palette later restyles the page as well.
+ */
 export function createDesign(input: CreateDesignInput): Design {
   const now = input.now ?? Date.now();
   const design: Design = {
@@ -49,7 +52,7 @@ export function createDesign(input: CreateDesignInput): Design {
     pages: [
       {
         id: uuidv7(now),
-        background: structuredClone(input.background ?? { type: 'solid', color: '#ffffff' }),
+        background: structuredClone(input.background ?? { type: 'solid', color: '$background' }),
         elements: [],
       },
     ],

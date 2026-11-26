@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ALIGNMENTS } from '@/core/arrange';
-import { createGridItem } from '@/core/design/elements';
+import { createCreditElement, createGridItem } from '@/core/design/elements';
 import type {
   Fill,
   GridElement,
@@ -32,15 +32,17 @@ import type {
 } from '@/core/schema';
 import { ICON_NAMES, QR_ERROR_LEVELS, STICKER_NAMES } from '@/core/schema';
 import { fromPx, toPx } from '@/core/units';
+import { ImagePickerDialog } from '@/features/images/ImagePickerDialog';
 import { useSettings } from '@/features/settings/settingsStore';
 import { humanize } from '@/lib/humanize';
-import { useAssetUrl } from '@/render/assetUrl';
+import { assetIdFromSrc } from '@/render/assetUrl';
+import { useImageSrc } from '@/render/imageSource';
 import { type AssetRecord, assetRepository } from '@/storage';
+import { useAsset } from '@/storage/hooks';
 import { useEditor, useEditorStore } from './EditorContext';
 import { elementLabel } from './elementLabel';
+import { FontSelect } from './FontSelect';
 import { ColorField, NumberField } from './fields';
-
-const FONT_OPTIONS = ['Inter', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 
 const FONT_WEIGHTS = [
   { value: 400, key: 'regular' },
@@ -72,7 +74,8 @@ export function Inspector() {
         </div>
         <FillEditor
           allowImage
-          value={doc.pages[pageIndex]?.background ?? { type: 'solid', color: '#ffffff' }}
+          frame={doc}
+          value={doc.pages[pageIndex]?.background ?? { type: 'solid', color: '$background' }}
           onChange={(fill) =>
             store.getState().edit((d) => {
               const page = d.pages[pageIndex];
@@ -244,19 +247,11 @@ function TextInspector({ element }: { element: TextElement }) {
         <Label htmlFor={`${id}-font`} className="text-muted-foreground text-xs">
           {t('editor.font')}
         </Label>
-        <NativeSelect
+        <FontSelect
           id={`${id}-font`}
           value={element.style.fontFamily}
-          onChange={(e) => change('fontFamily', e.target.value)}
-        >
-          <option value="$heading">{t('editor.themeHeading')}</option>
-          <option value="$body">{t('editor.themeBody')}</option>
-          {FONT_OPTIONS.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
-          ))}
-        </NativeSelect>
+          onChange={(font) => change('fontFamily', font)}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <NumberField
@@ -464,17 +459,30 @@ function ShapeInspector({ element }: { element: ShapeElement }) {
 function ImageInspector({ element }: { element: ImageElement }) {
   const { t } = useTranslation();
   const store = useEditorStore();
+  const theme = useEditor((s) => s.doc.theme);
   const id = useId();
+  const [picking, setPicking] = useState(false);
   return (
     <div className="space-y-3 border-t pt-4">
-      <UploadImageButton
-        label={t('editor.replaceImage')}
-        onUploaded={(asset) =>
+      <Button type="button" variant="outline" size="sm" onClick={() => setPicking(true)}>
+        <ImagePlus />
+        {t('editor.replaceImage')}
+      </Button>
+      <ImagePickerDialog
+        open={picking}
+        onOpenChange={setPicking}
+        theme={theme}
+        frame={element}
+        initialTab={element.src.startsWith('library:') ? 'library' : 'uploads'}
+        onPick={(choice) =>
           store.getState().updateSelected((e) => {
-            if (e.type === 'image') e.src = `asset:${asset.id}`;
+            if (e.type !== 'image') return;
+            e.src = choice.src;
+            e.alt = choice.alt ?? e.alt;
           })
         }
       />
+      <ImageCredit element={element} />
       <div className="grid gap-1.5">
         <Label htmlFor={`${id}-alt`} className="text-muted-foreground text-xs">
           {t('editor.altText')}
@@ -570,6 +578,59 @@ function ImageInspector({ element }: { element: ImageElement }) {
         }
       />
     </div>
+  );
+}
+
+/** Licence and credit for images found with online search, with a one-click credit line. */
+function ImageCredit({
+  element,
+}: {
+  element: Pick<ImageElement, 'src' | 'x' | 'y' | 'width' | 'height'>;
+}) {
+  const { t } = useTranslation();
+  const store = useEditorStore();
+  const asset = useAsset(assetIdFromSrc(element.src));
+  const source = asset?.source;
+  if (!source || (source.kind !== 'openverse' && source.kind !== 'wikimedia')) return null;
+  const credit =
+    source.attribution ??
+    [source.title, source.creator, source.license].filter(Boolean).join(' · ');
+  const link = 'font-medium text-primary underline-offset-4 hover:underline';
+  return (
+    <section
+      aria-label={t('images.credit.title')}
+      className="space-y-2 rounded-md border bg-muted/30 p-3 text-xs"
+    >
+      <h3 className="font-medium">{t('images.credit.title')}</h3>
+      <p className="break-words">{credit}</p>
+      <p className="text-muted-foreground">{t('images.credit.hint')}</p>
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {source.url && (
+          <a href={source.url} target="_blank" rel="noopener noreferrer" className={link}>
+            {t('images.credit.source')}
+          </a>
+        )}
+        {source.licenseUrl && (
+          <a href={source.licenseUrl} target="_blank" rel="noopener noreferrer" className={link}>
+            {t('images.credit.license')}
+          </a>
+        )}
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          store.getState().commit();
+          store
+            .getState()
+            .insertElement(createCreditElement(store.getState().doc, element, credit));
+          toast.success(t('images.credit.added'));
+        }}
+      >
+        {t('images.credit.add')}
+      </Button>
+    </section>
   );
 }
 
@@ -1056,19 +1117,11 @@ function GridTextStyleEditor({
         <Label htmlFor={`${id}-font`} className="text-muted-foreground text-xs">
           {t('editor.font')}
         </Label>
-        <NativeSelect
+        <FontSelect
           id={`${id}-font`}
           value={style.fontFamily}
-          onChange={(event) => onChange({ ...style, fontFamily: event.target.value })}
-        >
-          <option value="$heading">{t('editor.themeHeading')}</option>
-          <option value="$body">{t('editor.themeBody')}</option>
-          {FONT_OPTIONS.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
-          ))}
-        </NativeSelect>
+          onChange={(font) => onChange({ ...style, fontFamily: font })}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <NumberField
@@ -1110,15 +1163,19 @@ function FillEditor({
   value,
   onChange,
   allowImage = false,
+  frame,
 }: {
   value: Fill;
   onChange: (fill: Fill) => void;
   allowImage?: boolean;
+  /** Size of the filled area, so background previews match its shape. */
+  frame?: { width: number; height: number };
 }) {
   const { t } = useTranslation();
   const id = useId();
   const theme = useEditor((s) => s.doc.theme);
-  const imageUrl = useAssetUrl(value.type === 'image' ? value.src : undefined);
+  const [picking, setPicking] = useState(false);
+  const imageUrl = useImageSrc(value.type === 'image' ? value.src : undefined, theme, frame);
   const first =
     value.type === 'solid'
       ? value.color
@@ -1215,16 +1272,29 @@ function FillEditor({
               draggable={false}
             />
           )}
-          <UploadImageButton
-            label={value.type === 'image' ? t('editor.replaceImage') : t('editor.addImage')}
-            onUploaded={(asset) =>
+          <Button type="button" variant="outline" size="sm" onClick={() => setPicking(true)}>
+            <ImagePlus />
+            {value.type === 'image' ? t('editor.replaceImage') : t('editor.chooseImage')}
+          </Button>
+          <ImagePickerDialog
+            open={picking}
+            onOpenChange={setPicking}
+            theme={theme}
+            frame={frame}
+            initialTab="library"
+            initialCategory="backgrounds"
+            onPick={(choice) =>
               onChange({
                 type: 'image',
-                src: `asset:${asset.id}`,
-                fit: value.type === 'image' ? value.fit : 'cover',
+                src: choice.src,
+                // Built-in backgrounds are drawn to fit exactly; photos keep their fit.
+                fit: choice.adaptive ? 'cover' : value.type === 'image' ? value.fit : 'cover',
               })
             }
           />
+          {value.type === 'image' && frame && (
+            <ImageCredit element={{ src: value.src, x: 0, y: 0, ...frame }} />
+          )}
           {value.type === 'image' && (
             <div className="grid gap-1.5">
               <Label htmlFor={`${id}-fit`} className="text-muted-foreground text-xs">
@@ -1240,7 +1310,7 @@ function FillEditor({
                   })
                 }
               >
-                {(['cover', 'contain', 'fill'] as const).map((fit) => (
+                {(['cover', 'contain', 'tile'] as const).map((fit) => (
                   <option key={fit} value={fit}>
                     {t(`editor.fits.${fit}`)}
                   </option>

@@ -1,4 +1,4 @@
-import { ExternalLink, Heart, ShieldCheck, WifiOff } from 'lucide-react';
+import { ExternalLink, Heart, Search, ShieldCheck, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { create } from 'zustand';
 import { Logo } from '@/components/Logo';
@@ -52,6 +52,10 @@ export function AboutDialog() {
             <li className="flex gap-2">
               <WifiOff className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
               {t('about.privacyOffline')}
+            </li>
+            <li className="flex gap-2">
+              <Search className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              {t('about.privacySearch')}
             </li>
           </ul>
         </div>

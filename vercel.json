@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/templates", "destination": "/templates/index.html" },
+    {
+      "source": "/templates/category/:category",
+      "destination": "/templates/category/:category/index.html"
+    },
+    { "source": "/templates/:templateId", "destination": "/templates/:templateId/index.html" },
+    { "source": "/settings", "destination": "/settings/index.html" },
+    { "source": "/design/:designId", "destination": "/editor.html" }
+  ],
+  "headers": [
+    {
+      "source": "/design/:designId",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
+    { "source": "/editor.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }] }
+  ]
+}

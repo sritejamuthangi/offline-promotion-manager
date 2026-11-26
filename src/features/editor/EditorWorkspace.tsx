@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Keyboard, Redo2, Undo2, X } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { ArrowLeft, BookmarkPlus, Keyboard, Redo2, Undo2, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ThemeMenu } from '@/app/theme';
@@ -15,6 +15,7 @@ import {
 import { NativeSelect } from '@/components/ui/native-select';
 import type { InsertKind } from '@/core/design/elements';
 import {
+  createBackdropElement,
   createGridElement,
   createGridItem,
   createIconElement,
@@ -30,8 +31,10 @@ import {
   MAX_NAME_LENGTH,
   type StickerName,
 } from '@/core/schema';
+import { type ImageChoice, ImagePickerDialog } from '@/features/images/ImagePickerDialog';
+import { SaveTemplateDialog } from '@/features/templates/SaveTemplateDialog';
 import { useMediaQuery } from '@/lib/hooks';
-import { assetRepository, designRepository } from '@/storage';
+import { designRepository } from '@/storage';
 import { DesignConflictError, DesignNotFoundError } from '@/storage/repositories';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorProvider, useEditor, useEditorStore } from './EditorContext';
@@ -41,6 +44,7 @@ import { createEditorStore } from './editorStore';
 import { Inspector } from './Inspector';
 import { LayersPanel } from './LayersPanel';
 import { QrDialog } from './QrDialog';
+import { StylesPanel } from './StylesPanel';
 import { useEditorPersistence } from './useEditorPersistence';
 import { useEditorShortcuts } from './useEditorShortcuts';
 
@@ -73,7 +77,11 @@ function Workspace() {
   const [help, setHelp] = useState(false);
   const [elementsOpen, setElementsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
-  const imageInput = useRef<HTMLInputElement>(null);
+  const [imagesOpen, setImagesOpen] = useState(false);
+  const [templateDraft, setTemplateDraft] = useState<Design | null>(null);
+  const theme = useEditor((s) => s.doc.theme);
+  const pageWidth = useEditor((s) => s.doc.width);
+  const pageHeight = useEditor((s) => s.doc.height);
   const { state: saveState, flush } = useEditorPersistence(store);
   const insert = useCallback(
     (kind: InsertKind) => {
@@ -85,39 +93,22 @@ function Workspace() {
     [store, t],
   );
   const insertElement = useCallback(
-    (element: DesignElement) => {
+    (element: DesignElement, position?: 'front' | 'back') => {
       store.getState().commit();
       setEditing(null);
       setHand(false);
-      store.getState().insertElement(element);
+      store.getState().insertElement(element, position);
     },
     [store],
   );
   const addImage = useCallback(
-    async (file: File) => {
-      if (!file.type.startsWith('image/')) {
-        toast.error(t('editor.imageError'));
-        return;
-      }
-      try {
-        const asset = await assetRepository.add({
-          blob: file,
-          name: file.name,
-          type: file.type,
-        });
-        insertElement(
-          createImageElement(store.getState().doc, {
-            src: `asset:${asset.id}`,
-            width: asset.width,
-            height: asset.height,
-            alt: file.name,
-          }),
-        );
-      } catch {
-        toast.error(t('editor.imageError'));
-      }
+    (choice: ImageChoice) => {
+      const doc = store.getState().doc;
+      // Backgrounds cover the page and go behind everything already there.
+      if (choice.adaptive) insertElement(createBackdropElement(doc, choice.src), 'back');
+      else insertElement(createImageElement(doc, choice));
     },
-    [insertElement, store, t],
+    [insertElement, store],
   );
   const addGrid = useCallback(() => {
     const names = [
@@ -170,18 +161,6 @@ function Workspace() {
 
   return (
     <div className="flex h-dvh min-w-0 flex-col overflow-hidden bg-background" data-testid="editor">
-      <input
-        ref={imageInput}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        aria-label={t('editor.addImage')}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (file) void addImage(file);
-        }}
-      />
       <header className="flex h-14 shrink-0 items-center gap-1 border-b px-2 sm:gap-2 sm:px-4">
         <Button asChild variant="ghost" size="icon">
           <Link
@@ -227,6 +206,18 @@ function Workspace() {
           <Button
             size="icon-sm"
             variant="ghost"
+            aria-label={t('editor.saveAsTemplate')}
+            title={t('editor.saveAsTemplate')}
+            onClick={() => {
+              store.getState().commit();
+              setTemplateDraft(store.getState().doc);
+            }}
+          >
+            <BookmarkPlus />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
             aria-label={t('editor.shortcuts')}
             title={t('editor.shortcuts')}
             onClick={() => setHelp(true)}
@@ -248,6 +239,9 @@ function Workspace() {
           </button>
           <button type="button" onClick={() => openPanel('layers')}>
             {t('editor.layers')}
+          </button>
+          <button type="button" onClick={() => openPanel('styles')}>
+            {t('editor.styles')}
           </button>
         </div>
       </div>
@@ -284,7 +278,7 @@ function Workspace() {
         panelOpen={visiblePanel}
         openPanel={openPanel}
         insert={insert}
-        onAddImage={() => imageInput.current?.click()}
+        onOpenImages={() => setImagesOpen(true)}
         onOpenElements={() => setElementsOpen(true)}
         onOpenQr={() => setQrOpen(true)}
         onAddGrid={addGrid}
@@ -319,6 +313,13 @@ function Workspace() {
                 {t('editor.layers')}
               </Button>
               <Button
+                size="sm"
+                variant={panel === 'styles' ? 'secondary' : 'ghost'}
+                onClick={() => setPanel('styles')}
+              >
+                {t('editor.styles')}
+              </Button>
+              <Button
                 size="icon-sm"
                 variant="ghost"
                 className="ms-auto"
@@ -329,7 +330,9 @@ function Workspace() {
               </Button>
             </div>
             <div className="min-h-0 overflow-y-auto">
-              {panel === 'properties' ? <Inspector /> : <LayersPanel multi={multi} />}
+              {panel === 'properties' && <Inspector />}
+              {panel === 'layers' && <LayersPanel multi={multi} />}
+              {panel === 'styles' && <StylesPanel />}
             </div>
           </aside>
         )}
@@ -396,6 +399,14 @@ function Workspace() {
         onInsertSticker={addSticker}
       />
       <QrDialog open={qrOpen} onOpenChange={setQrOpen} onInsert={addQr} />
+      <ImagePickerDialog
+        open={imagesOpen}
+        onOpenChange={setImagesOpen}
+        onPick={addImage}
+        theme={theme}
+        frame={{ width: pageWidth, height: pageHeight }}
+      />
+      <SaveTemplateDialog design={templateDraft} onClose={() => setTemplateDraft(null)} />
     </div>
   );
 }

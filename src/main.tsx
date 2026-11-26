@@ -1,4 +1,4 @@
-import '@fontsource-variable/inter';
+import './styles/fonts';
 import './styles/index.css';
 import './i18n';
 import { StrictMode } from 'react';

@@ -65,6 +65,27 @@ change.
   A SHA-256 hash deduplicates identical files. The renderer resolves each asset through a cached
   object URL, so the same upload can appear in several designs without being stored twice.
   Nothing is uploaded to a server.
+- Database version 2 adds a `templates` table. A saved template is a validated design snapshot;
+  starting a new design from it regenerates design, page, element and grid-item IDs. Deleting the
+  source design or template does not delete image assets referenced by other designs.
+
+## Content and styles
+
+`src/content/templates` contains responsive layout functions for bundled templates. A shared kit
+builds ordinary design elements; each template selects regional presets and uses theme colour/font
+slots. The catalogue includes 14 starting templates; step 5 expands it. `src/content/palettes.ts`
+and `fontPairings.ts` provide 20 palettes and 14 pairings. Palette tests verify text contrast.
+
+`library:<id>` sources refer to 33 deterministic SVG graphics, drawn locally using the design's
+colours. Adaptive backgrounds and frames redraw for the target proportions. They use no IndexedDB
+space. `useImageSrc` resolves these graphics alongside local `asset:<id>` references. Font stacks
+map friendly names to the registered Fontsource families; 15 fonts are bundled under OFL-1.1.
+
+Online image search is opt-out, persisted in settings. Pure provider URL/response helpers live in
+`core/imageSearch.ts`; the UI owns cancellable requests and downloads, with timeouts and a streaming
+25 MB limit. Changing providers, search options or closing the picker cancels active requests.
+Selected images are stored locally with provenance, licence links and credit. Search never
+transmits designs. Provider calls omit credentials and referrers.
 
 ## Editor
 
@@ -120,8 +141,15 @@ renderer. Editor overlays (selection, guides, handles and text input) are separa
 
 ## Routing
 
-TanStack Router with **hash URLs** (`/#/design/<id>`), so the static build works on any host and in
-any sub-folder without server rewrite rules. Screens other than home load on demand.
+TanStack Router uses browser history and clean paths. Old hash bookmarks are upgraded on entry.
+`VITE_BASE_PATH` supports sub-folder deployments. Screens other than home load on demand.
+
+`scripts/prerender.mjs` loads `src/seo/prerender.tsx` through Vite at build time and produces static
+HTML for every public route. `src/seo/pages.ts` is the shared source for titles, canonical URLs,
+Open Graph/Twitter tags, structured data and sitemap entries. The canonical origin defaults to
+`https://opm.sritejam.com` and is configurable with `VITE_SITE_URL`. JavaScript enhances the public
+HTML with the local app; pre-rendering never reads browser storage. Local editor routes are
+noindex and use a separate shell; unknown public routes return 404. See `docs/DEPLOYMENT.md`.
 
 ## Testing
 

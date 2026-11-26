@@ -73,7 +73,16 @@ export function createDexieAssetRepository(
           : await readDimensions(input.blob);
       return db.transaction('rw', db.assets, async () => {
         const existing = await db.assets.where('hash').equals(digest).first();
-        if (existing) return existing;
+        if (existing) {
+          // Identical uploaded bytes may later be discovered online. Preserve their
+          // known licence rather than silently dropping the newly available credit.
+          if (existing.source.kind === 'upload' && input.source && input.source.kind !== 'upload') {
+            const enriched = { ...existing, source: input.source };
+            await db.assets.put(enriched);
+            return enriched;
+          }
+          return existing;
+        }
         const record: AssetRecord = {
           id: newId(),
           blob: input.blob,

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { DesignsSection } from './DesignsSection';
 import { QuickCreate } from './QuickCreate';
+import { TemplatesSection } from './TemplatesSection';
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ export function HomePage() {
       </section>
 
       <QuickCreate />
+      <TemplatesSection />
       <DesignsSection />
     </div>
   );

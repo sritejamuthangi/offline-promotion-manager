@@ -391,12 +391,16 @@ test('touch dragging and two-finger zoom preserve the artwork', async ({
 test('uploads an image locally and restores it from IndexedDB after reload', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await toolbar(page).getByRole('button', { name: 'Images', exact: true }).click();
   await uploadImage(
     page,
-    toolbar(page).getByRole('button', { name: 'Add image', exact: true }),
+    page
+      .getByRole('dialog', { name: 'Images' })
+      .getByRole('button', { name: 'Upload from device' }),
     'swatch.svg',
     'Local',
   );
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   const image = artwork(page).locator('[data-element-type="image"] img');
   await expect(image).toBeVisible();
   await expect(image).toHaveAttribute('src', /^blob:/);

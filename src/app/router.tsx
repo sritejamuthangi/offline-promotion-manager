@@ -1,10 +1,11 @@
 import {
-  createHashHistory,
+  createBrowserHistory,
   createRootRoute,
   createRoute,
   createRouter,
   lazyRouteComponent,
 } from '@tanstack/react-router';
+import { BASE_PATH } from '@/config/site';
 import { HomePage } from '@/features/home/HomePage';
 import { AppLayout, RootLayout } from './layouts';
 import { NotFoundPage } from './NotFoundPage';
@@ -34,6 +35,33 @@ const settingsRoute = createRoute({
   component: lazyRouteComponent(() => import('@/features/settings/SettingsPage'), 'SettingsPage'),
 });
 
+const templatesRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: '/templates',
+  // `?category=mine` opens the catalogue on the templates saved on this device.
+  validateSearch: (search: Record<string, unknown>): { category?: string } =>
+    typeof search.category === 'string' ? { category: search.category } : {},
+  component: lazyRouteComponent(
+    () => import('@/features/templates/TemplatesPage'),
+    'TemplatesPage',
+  ),
+});
+
+const templateCategoryRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: '/templates/category/$category',
+  component: lazyRouteComponent(
+    () => import('@/features/templates/TemplatesPage'),
+    'TemplatesPage',
+  ),
+});
+
+const templateRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: '/templates/$templateId',
+  component: lazyRouteComponent(() => import('@/features/templates/TemplatePage'), 'TemplatePage'),
+});
+
 /** The design workspace uses the whole screen, without the regular header and footer. */
 const designRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -42,14 +70,26 @@ const designRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  appLayoutRoute.addChildren([homeRoute, settingsRoute]),
+  appLayoutRoute.addChildren([
+    homeRoute,
+    templatesRoute,
+    templateCategoryRoute,
+    templateRoute,
+    settingsRoute,
+  ]),
   designRoute,
 ]);
 
+// Old bookmarks remain usable after moving from hash URLs to crawlable paths.
+if (window.location.hash.startsWith('#/')) {
+  const path = window.location.hash.slice(1);
+  if (!path.startsWith('//')) window.history.replaceState(null, '', `${BASE_PATH}${path}`);
+}
+
 export const router = createRouter({
   routeTree,
-  // Hash URLs (/#/design/123) work on any static host and sub-folder without server rules.
-  history: createHashHistory(),
+  history: createBrowserHistory(),
+  basepath: BASE_PATH || '/',
   defaultPreload: 'intent',
   scrollRestoration: true,
 });

@@ -34,7 +34,8 @@ export interface EditorState {
   undo: () => void;
   redo: () => void;
   insert: (kind: InsertKind, text: string) => void;
-  insertElement: (element: DesignElement) => void;
+  /** Adds an element in front of the others, or behind them (`'back'`, for backgrounds). */
+  insertElement: (element: DesignElement, position?: 'front' | 'back') => void;
   updateSelected: (recipe: (element: Draft<DesignElement>) => void) => void;
   removeSelected: () => void;
   duplicateSelected: () => void;
@@ -164,9 +165,11 @@ export function createEditorStore(initial: Design, clock: () => number = Date.no
         });
         get().select([element.id]);
       },
-      insertElement: (element) => {
+      insertElement: (element, position = 'front') => {
         get().edit((d) => {
-          d.pages[get().pageIndex]?.elements.push(element);
+          const page = d.pages[get().pageIndex];
+          if (position === 'back') page?.elements.unshift(element);
+          else page?.elements.push(element);
         });
         get().select([element.id]);
       },

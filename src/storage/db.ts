@@ -1,12 +1,20 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Design } from '@/core/schema';
+import type { TemplateCategory } from '@/core/templates';
 
 /** Where an asset came from, kept so licences and credits travel with the image. */
 export interface AssetSource {
   kind: 'upload' | 'builtin' | 'openverse' | 'wikimedia';
+  /** Page describing the original (for online images). */
   url?: string;
+  /** Licence name, e.g. "CC BY-SA 4.0". */
   license?: string;
+  licenseUrl?: string;
+  /** A ready-made credit line people can add to their design. */
   attribution?: string;
+  title?: string;
+  creator?: string;
+  creatorUrl?: string;
 }
 
 /** An image or font stored on this device. */
@@ -24,9 +32,20 @@ export interface AssetRecord {
   source: AssetSource;
 }
 
+/** A design someone saved as a reusable template on this device. */
+export interface SavedTemplate {
+  id: string;
+  name: string;
+  category?: TemplateCategory;
+  design: Design;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export type AppDatabase = Dexie & {
   designs: EntityTable<Design, 'id'>;
   assets: EntityTable<AssetRecord, 'id'>;
+  templates: EntityTable<SavedTemplate, 'id'>;
 };
 
 export const DB_NAME = 'offline-promotion-manager';
@@ -40,6 +59,10 @@ export function openDatabase(name: string = DB_NAME): AppDatabase {
   db.version(1).stores({
     designs: 'id, updatedAt, createdAt',
     assets: 'id, hash, createdAt',
+  });
+  // Version 2: templates people save from their own designs.
+  db.version(2).stores({
+    templates: 'id, updatedAt, createdAt',
   });
   return db;
 }

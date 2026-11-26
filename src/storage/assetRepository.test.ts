@@ -61,6 +61,22 @@ describe('DexieAssetRepository', () => {
     expect((await repo.list()).map((asset) => asset.name)).toEqual(['two.png', 'one.png']);
   });
 
+  it('preserves discovered credits when online bytes match an existing upload', async () => {
+    const repo = repository();
+    const blob = new Blob(['shared'], { type: 'image/png' });
+    const upload = await repo.add({ blob, name: 'upload.png' });
+    const source = {
+      kind: 'openverse' as const,
+      attribution: 'Photo by Jane (CC BY 4.0)',
+      license: 'CC BY 4.0',
+    };
+    const result = await repo.add({ blob, name: 'online.png', source });
+    expect(result.id).toBe(upload.id);
+    expect((await repo.get(upload.id))?.source).toEqual(source);
+    expect((await repo.add({ blob, name: 'again.png' })).source).toEqual(source);
+    expect(await repo.list()).toHaveLength(1);
+  });
+
   it('rejects empty files', async () => {
     await expect(repository().add({ blob: new Blob([]), name: 'empty.png' })).rejects.toThrow(
       RangeError,

@@ -23,14 +23,15 @@ export type Theme = z.infer<typeof ThemeSchema>;
 export const DEFAULT_THEME: Theme = {
   id: 'default',
   name: 'Default',
+  // Matches the "Violet" palette in src/content/palettes.ts.
   colors: {
     primary: '#6d28d9',
-    secondary: '#0ea5e9',
+    secondary: '#0369a1',
     accent: '#f43f5e',
     background: '#ffffff',
     surface: '#f4f4f5',
     text: '#18181b',
-    muted: '#71717a',
+    muted: '#52525b',
   },
   fonts: {
     heading: 'Inter',

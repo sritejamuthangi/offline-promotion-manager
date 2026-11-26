@@ -95,6 +95,65 @@ export function createImageElement(
   };
 }
 
+/** A graphic that covers the whole page, such as a built-in background. */
+export function createBackdropElement(design: Design, src: string): ImageElement {
+  return {
+    id: newId(),
+    x: 0,
+    y: 0,
+    width: design.width,
+    height: design.height,
+    rotation: 0,
+    opacity: 1,
+    type: 'image',
+    src,
+    alt: '',
+    fit: 'cover',
+  };
+}
+
+/** A small credit line for an image, placed just below it (or above, if there's no room). */
+export function createCreditElement(
+  design: Design,
+  image: Pick<DesignElement, 'x' | 'y' | 'width' | 'height'>,
+  text: string,
+): DesignElement {
+  const size = Math.min(design.width, design.height);
+  const fontSize = Math.max(8, size * 0.016);
+  const height = fontSize * 1.3 * 2;
+  const width = Math.min(design.width, Math.max(image.width, design.width * 0.4));
+  const x = Math.min(Math.max(0, image.x), design.width - width);
+  const gap = fontSize * 0.4;
+  const below = image.y + image.height + gap;
+  const y =
+    below + height <= design.height
+      ? below
+      : Math.max(0, Math.min(image.y - gap, design.height) - height);
+  return {
+    id: newId(),
+    type: 'text',
+    name: 'Credit',
+    text,
+    x,
+    y,
+    width,
+    height,
+    rotation: 0,
+    opacity: 1,
+    direction: 'auto',
+    style: {
+      fontFamily: '$body',
+      fontSize,
+      fontWeight: 400,
+      color: '$muted',
+      align: 'start',
+      verticalAlign: 'top',
+      lineHeight: 1.3,
+      letterSpacing: 0,
+    },
+  };
+}
+
 export function createQrElement(
   design: Design,
   value: string,
