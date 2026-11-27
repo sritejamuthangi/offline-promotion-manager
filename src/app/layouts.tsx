@@ -52,10 +52,15 @@ function SiteHeader() {
           <span className="hidden truncate sm:inline">{APP.name}</span>
         </Link>
         <nav aria-label={t('nav.mainNavigation')} className="ms-auto flex items-center gap-1">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/templates" activeProps={{ 'aria-current': 'page' }}>
+          <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
+            <Link
+              to="/templates"
+              aria-label={t('nav.templates')}
+              activeProps={{ 'aria-current': 'page' }}
+            >
               <LayoutTemplate />
-              {t('nav.templates')}
+              {/* Phones keep the app name; the icon still names the page for assistive tech. */}
+              <span className="hidden sm:inline">{t('nav.templates')}</span>
             </Link>
           </Button>
           <ThemeMenu />

@@ -279,31 +279,3 @@ export async function exportPdf(
     'application/pdf',
   );
 }
-
-/** A safe file name from the design name; `copy` numbers files for multi-page exports. */
-export function exportFileName(name: string, extension: string, copy?: number): string {
-  const cleaned = Array.from(name.normalize('NFC'), (ch) =>
-    ch.charCodeAt(0) < 32 || ch === '\u007f' || '\\/:*?"<>|'.includes(ch) ? ' ' : ch,
-  )
-    .join('')
-    .replace(/\s+/g, ' ')
-    .replace(/^[\s.]+|[\s.]+$/g, '')
-    .slice(0, 100)
-    .trim();
-  return `${cleaned || 'design'}${copy !== undefined ? ` (${copy})` : ''}.${extension}`;
-}
-
-/** Saves a file through the browser's normal download. */
-export function downloadBlob(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.rel = 'noopener';
-  link.style.display = 'none';
-  document.body.append(link);
-  link.click();
-  link.remove();
-  // Some browsers start reading the file after `click()` returns.
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}

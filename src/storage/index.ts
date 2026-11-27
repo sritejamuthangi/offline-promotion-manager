@@ -4,6 +4,7 @@ import { createDexieDesignRepository } from './dexieDesignRepository';
 import { createDexieTemplateRepository } from './templateRepository';
 
 export type { AssetRepository } from './assetRepository';
+export { collectBackupContents, previewRestore, restoreBackup } from './backupRepository';
 export { getStorageStatus, requestPersistentStorage, type StorageStatus } from './browserStorage';
 export type { AssetRecord, AssetSource, SavedTemplate } from './db';
 export { DesignNotFoundError, type DesignRepository } from './repositories';

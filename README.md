@@ -30,7 +30,7 @@ balanced card layout of that first version lives on in the Smart Grid element.
 - [x] **Step 4: content system.** Searchable template catalogue, 20 colour palettes, 14 font pairings, built-in graphics, optional Openverse/Wikimedia Commons image search and local save-as-template.
 - [x] **Step 5: starter library.** 50 editable templates across business, education, events, greetings, food, signs and social media, with international and US sizes.
 - [x] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
-- [ ] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
+- [x] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
 
 ## Getting started
 
@@ -145,6 +145,21 @@ also show **Install app** in Settings); on iPhone or iPad, tap **Share → Add t
 Installed, it opens in its own window. When a new version is published, the app offers
 **Update**; until then the version you have keeps working, offline as well.
 
+### Backup and restore
+
+**Settings → Backup and restore → Download backup** saves everything on this device as one ZIP
+file: every design (including **Recently deleted**), saved templates and uploaded images. It is an
+open format containing `backup.json` and an `images/` folder, with no account details or passwords,
+and it is created entirely on your device.
+
+To move your work to another browser, phone or computer, open the app there and choose
+**Restore file**. Restoring only adds: items already present are skipped, identical images are
+stored once, and a different version of an existing item is added as a copy instead of replacing
+what you have. Designs found in **Recently deleted** come back to the home screen. The preview
+shows exactly what will be added before anything changes, so restoring the same file twice is
+harmless. Keep the ZIP file somewhere safe: clearing your browser's site data deletes the designs
+on the device, and the backup is then the only copy.
+
 ### Keyboard shortcuts
 
 | Action                                | Control                                                                |
@@ -234,7 +249,8 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md). Everyone taking part agrees to th
 
 The app has no backend. It does not collect analytics, set tracking cookies, or send your designs
 anywhere. Everything is stored in your browser on your device, so clearing the site's data in your
-browser deletes your designs. A backup and restore feature is planned.
+browser deletes your designs; use **Settings → Backup and restore** to keep a copy or move them to
+another device.
 
 Optional online image search sends your search words to the selected provider. Results and image
 downloads contact the provider and image hosts. Requests omit credentials and referrers; your

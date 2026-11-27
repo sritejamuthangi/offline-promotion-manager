@@ -28,18 +28,13 @@ import {
 import { type Design, MAX_DESIGN_PX } from '@/core/schema';
 import { formatSize, fromPx, roundTo, toPx, UNIT_DECIMALS, type Unit } from '@/core/units';
 import { useEffectivePaper, useEffectiveUnit } from '@/features/settings/settingsStore';
-import { useElementSize } from '@/lib/hooks';
+import { downloadBlob } from '@/lib/download';
+import { safeFileName } from '@/lib/format';
+import { useElementSize, useMediaQuery } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { preloadAssets } from '@/render/assetUrl';
 import { loadScriptFonts } from '@/styles/loadScriptFonts';
-import {
-  downloadBlob,
-  exportFileName,
-  exportImage,
-  exportPdf,
-  maxExportPixels,
-  prepareExportFonts,
-} from './exportFiles';
+import { exportImage, exportPdf, maxExportPixels, prepareExportFonts } from './exportFiles';
 import { PrintJob, type PrintJobData } from './PrintJob';
 import { PrintSheetView } from './PrintSheetView';
 import {
@@ -97,6 +92,11 @@ export function PrintDialog({
   const [busy, setBusy] = useState(false);
   const [preparingFonts, setPreparingFonts] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  // On phones the dialog reaches the bottom of the screen, where a toast would cover its
+  // buttons; messages appear at the top instead.
+  const toastPosition = useMediaQuery('(max-width: 639px)')
+    ? ('top-center' as const)
+    : ('bottom-center' as const);
   const printRequest = useRef(0);
   useEffect(
     () => () => {
@@ -146,7 +146,7 @@ export function PrintDialog({
       }
     } catch (error) {
       console.error('Could not prepare printing', error);
-      toast.error(t('print.printFailed'));
+      toast.error(t('print.printFailed'), { position: toastPosition });
     } finally {
       if (request === printRequest.current) setPreparing(false);
     }
@@ -158,25 +158,26 @@ export function PrintDialog({
       const pages = pagesFor(downloadSettings.allPages);
       const { format, dpi, marks, bleed } = downloadSettings;
       if (format === 'pdf') {
-        const name = exportFileName(design.name, 'pdf');
+        const name = safeFileName(design.name, 'pdf');
         downloadBlob(await exportPdf(design, pages, { dpi, marks, bleed }), name);
-        toast.success(t('print.downloaded', { name }));
+        toast.success(t('print.downloaded', { name }), { position: toastPosition });
       } else {
         const extension = format === 'png' ? 'png' : 'jpg';
         let name = '';
         for (const page of pages) {
-          name = exportFileName(design.name, extension, pages.length > 1 ? page + 1 : undefined);
+          name = safeFileName(design.name, extension, pages.length > 1 ? page + 1 : undefined);
           downloadBlob(await exportImage(design, page, format, dpi), name);
         }
         toast.success(
           pages.length > 1
             ? t('print.downloadedFiles', { count: pages.length })
             : t('print.downloaded', { name }),
+          { position: toastPosition },
         );
       }
     } catch (error) {
       console.error('Export failed', error);
-      toast.error(t('print.exportFailed'));
+      toast.error(t('print.exportFailed'), { position: toastPosition });
     } finally {
       setBusy(false);
     }
@@ -259,7 +260,7 @@ export function PrintDialog({
         onError={() => {
           setJob(null);
           setPrinting(false);
-          toast.error(t('print.printFailed'));
+          toast.error(t('print.printFailed'), { position: toastPosition });
         }}
       />
     </>

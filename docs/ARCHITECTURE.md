@@ -228,6 +228,37 @@ and saving all fonts with progress. The manifest is generated from `APP` with re
 build works at the domain root and in a sub-folder. Icons are rendered from `favicon.svg` by
 `scripts/generate-icons.mjs` (run manually after changing the logo).
 
+## Backup and restore
+
+Backups are ordinary ZIP files, so people can inspect or recover them with any ZIP tool. The writer
+and reader are in `src/core/zip.ts`: entries may be stored or deflated, names are UTF-8, CRC-32 is
+checked on read, and the 32-bit format limits a file to 4 GB. Uploaded images are stored without
+recompression, while `backup.json` and `README.txt` are deflated; writing reuses each `Blob` without
+copying its bytes.
+
+`src/core/backup.ts` defines `backup.json` (format name, version, kind, creation time, app name and
+three item lists) and the additive restore plan. `src/core/backupFile.ts` opens a file, validates
+the table of contents with Zod, runs every design and saved template through `migrateDesign`, then
+reads each picture, checking its declared size and CRC-32 and computing its SHA-256 for matching.
+A damaged item is reported in `issues` and skipped; a newer format version, or a ZIP without
+`backup.json`, stops with a typed `BackupError`. The manifest and each picture are capped at 100 MB,
+the three lists at 50,000 items, and image paths must stay inside `images/`.
+
+`planRestore` compares the file with an inventory of this device's IDs, timestamps and image hashes:
+
+- Identical items are skipped. A design found only in **Recently deleted** is undeleted.
+- A changed design or template keeps its local version and is added under a new ID and a
+  “(restored)” name. Changed images get a new ID, and every `asset:` reference in the restored
+  designs and templates is remapped.
+- Images are matched by content hash, so one picture is stored once even if its ID changed.
+- Nothing is ever replaced or deleted, so restoring the same file twice adds nothing.
+
+`src/storage/backupRepository.ts` collects the library, previews a plan without writing, and applies
+it: pictures are written one at a time with progress and re-hashed, then designs and templates are
+saved in one transaction. The Settings card shows the preview, per-picture progress and errors for
+quota, damaged files, other ZIP files and files from a newer version. The reader also accepts
+single-design files (`kind: "design"`), though the current UI only creates full backups.
+
 ## Internationalisation
 
 - All UI text lives in `src/i18n/locales/*.json`. Keys are type-checked through
@@ -260,6 +291,11 @@ noindex and use a separate shell; unknown public routes return 404. See `docs/DE
   and Thai text offline.
 - World-script browser tests check the per-text font order, that Latin-only designs never load the
   writing-system fonts, and that exports embed only the faces drawing the text.
+- Backup browser tests download a full backup, clear IndexedDB, restore it, and verify designs,
+  saved templates and uploaded images; restoring the same file again adds nothing, and other files
+  are refused with a helpful message.
+- Phone layout browser tests check that the 320 px header keeps the app name and an accessible
+  Templates icon, and that a download message appears above the print dialog's controls.
 - Print/export browser tests verify physical dimensions, multiple-copy and poster pagination,
   custom/US paper, print cleanup and failures, latest-edit snapshots, decodable PNG/JPG and DPI
   metadata, multi-page PDF boxes, offline uploaded images/fills, bleed and large-banner limits.

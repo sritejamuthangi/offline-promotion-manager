@@ -1,5 +1,8 @@
+import { hashBlob } from '@/core/hash';
 import { newId } from '@/core/ids';
 import type { AppDatabase, AssetRecord, AssetSource } from './db';
+
+export { hashBlob };
 
 export interface NewAsset {
   blob: Blob;
@@ -23,23 +26,6 @@ export type AssetHasher = (blob: Blob) => Promise<string>;
 export type DimensionReader = (
   blob: Blob,
 ) => Promise<{ width: number; height: number } | undefined>;
-
-/** SHA-256 keeps deduplication stable; a fast fallback keeps local HTTP use working. */
-export async function hashBlob(blob: Blob): Promise<string> {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  if (globalThis.crypto?.subtle) {
-    const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(
-      '',
-    );
-  }
-  let hash = 0x811c9dc5;
-  for (const byte of bytes) {
-    hash ^= byte;
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return `fnv1a-${(hash >>> 0).toString(16)}-${bytes.length}`;
-}
 
 export async function readImageDimensions(
   blob: Blob,

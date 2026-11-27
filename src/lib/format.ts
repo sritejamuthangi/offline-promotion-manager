@@ -19,6 +19,22 @@ export function formatRelativeTime(timestamp: number, now: number, locale?: stri
   return rtf.format(Math.sign(seconds), 'minute');
 }
 
+/**
+ * A safe file name from a design's name: no characters that file systems reject, at most
+ * 100 characters. `copy` numbers the files of a multi-page export.
+ */
+export function safeFileName(name: string, extension: string, copy?: number): string {
+  const cleaned = Array.from(name.normalize('NFC'), (ch) =>
+    ch.charCodeAt(0) < 32 || ch === '\u007f' || '\\/:*?"<>|'.includes(ch) ? ' ' : ch,
+  )
+    .join('')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s.]+|[\s.]+$/g, '')
+    .slice(0, 100)
+    .trim();
+  return `${cleaned || 'design'}${copy !== undefined ? ` (${copy})` : ''}.${extension}`;
+}
+
 const BYTE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const;
 
 /** "512 kB", "1.5 GB"... in the given locale. */
