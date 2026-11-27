@@ -183,8 +183,8 @@ the browser draws this onto a canvas at the requested DPI. Fonts use the HTTP ca
 in-memory data-URL cache. Opening the Download panel prepares the required faces before enabling
 the action, so disconnecting afterwards does not depend on the browser's font-response cache.
 Failed loads can be retried. Missing assets or failed font loads reject
-the export instead of silently omitting content. A service worker for offline installation is
-still planned for step 7.
+the export instead of silently omitting content; with the service worker (below), font files
+come from the device's offline copy.
 
 Canvas dimensions are bounded to 16,384 pixels per side and 50 megapixels on desktops, or 16.7
 megapixels on coarse-pointer devices. Resolution reduction is shown in the UI. PNG `pHYs` and JPEG
@@ -198,6 +198,35 @@ with vector/selectable text. Files have no watermark; app credit stays in the UI
 
 `src/render/fill.ts` resolves background fills, and shared typography lives alongside the artwork
 renderer. Editor overlays (selection, guides, handles and text input) are separate from artwork.
+
+## Offline use and installation
+
+`src/pwa/sw.ts` is the service worker. `scripts/prerender.mjs` builds it after the pages, with
+the file lists of that build (`src/pwa/plan.ts` decides them) and a version hash of the saved
+files:
+
+- **Installed with the app (about 4 MB):** all JavaScript and CSS, the design fonts' WOFF2 files,
+  icons, the manifest and two start pages (`index.html`, and `editor.html`, whose client router
+  can open any screen). `cache.addAll` saves a version atomically with revalidated requests.
+- **Saved on demand:** the writing-system fonts (`offline-fonts.json` lists them). The worker
+  saves each the first time it is fetched; Settings can save them all. Their cache survives
+  updates; files a new version no longer uses are removed when it activates.
+- **Screens:** navigations go to the network first, so public pages stay current, and fall back
+  to the saved start page when offline or after 4 seconds. Paths with a file extension (such as
+  `sitemap.xml`) are never answered with the app. Requests to other origins, such as online image
+  search, are not intercepted.
+- Saved files are matched with `ignoreVary`: their names contain content hashes, and hosts may add
+  `Vary: Origin`, which module scripts and fonts would otherwise never match offline.
+
+A new version installs in the background and waits. `src/pwa/register.ts` offers **Update**, which
+asks it to `skipWaiting`; every open tab reloads on `controllerchange`, so no page keeps running
+code whose files were removed. The first install takes control without a reload. Registration
+starts after the page's `load` event, checks for updates hourly and is skipped in development.
+
+Settings shows readiness, Chromium's deferred `beforeinstallprompt`, iPhone and iPad instructions,
+and saving all fonts with progress. The manifest is generated from `APP` with relative URLs, so a
+build works at the domain root and in a sub-folder. Icons are rendered from `favicon.svg` by
+`scripts/generate-icons.mjs` (run manually after changing the logo).
 
 ## Internationalisation
 
@@ -226,6 +255,9 @@ noindex and use a separate shell; unknown public routes return 404. See `docs/DE
   and pure helpers.
 - **Browser tests** (Playwright) for home/editor flows on desktop and phone-sized screens, including
   pointer transforms, real emulated touch gestures, undo, persistence and cross-tab recovery.
+- Offline browser tests run with the service worker (other suites block it): they reload an editor
+  link, open screens and create designs offline, and save every font to render and export Japanese
+  and Thai text offline.
 - World-script browser tests check the per-text font order, that Latin-only designs never load the
   writing-system fonts, and that exports embed only the faces drawing the text.
 - Print/export browser tests verify physical dimensions, multiple-copy and poster pagination,

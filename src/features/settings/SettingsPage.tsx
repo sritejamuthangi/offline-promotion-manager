@@ -12,6 +12,7 @@ import { browserLocale, defaultPaperFor, defaultUnitFor, type PaperFamily } from
 import { UNITS, type Unit } from '@/core/units';
 import { formatBytes } from '@/lib/format';
 import { getStorageStatus, requestPersistentStorage, type StorageStatus } from '@/storage';
+import { OfflineCard } from './OfflineCard';
 import { type ThemePreference, useSettings } from './settingsStore';
 
 export function SettingsPage() {
@@ -25,6 +26,7 @@ export function SettingsPage() {
         <MeasurementsCard />
         <OnlineCard />
         <StorageCard />
+        <OfflineCard />
         <AboutCard />
       </div>
     </div>

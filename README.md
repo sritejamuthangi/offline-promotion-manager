@@ -130,9 +130,20 @@ and trim/bleed boxes when requested; use browser printing for a PDF with selecta
 Multi-page designs can export all pages or the current page. Images download one file per page.
 
 Prints and files are prepared locally with bundled fonts and stored images, without watermarks.
-The Download panel prepares the fonts it needs; once **Download** is enabled, those fonts remain
-available for exports in that editing session even after disconnecting. Installable offline caching
-across reloads remains part of step 7.
+They work offline too (see below).
+
+### Offline use and installing
+
+After the first visit, the app keeps its files on your device: it starts, edits, prints and
+downloads without an internet connection, including deep links such as an open design. The
+first visit downloads about 4 MB (the app and its design fonts). Fonts for other writing systems
+are saved the first time a design uses them; **Settings → Offline use → Save all fonts** saves
+all of them (about 20 MB) in advance. Online image search needs a connection.
+
+To install the app, use your browser's install option (Chrome, Edge and other Chromium browsers
+also show **Install app** in Settings); on iPhone or iPad, tap **Share → Add to Home Screen**.
+Installed, it opens in its own window. When a new version is published, the app offers
+**Update**; until then the version you have keeps working, offline as well.
 
 ### Keyboard shortcuts
 
@@ -228,8 +239,9 @@ browser deletes your designs. A backup and restore feature is planned.
 Optional online image search sends your search words to the selected provider. Results and image
 downloads contact the provider and image hosts. Requests omit credentials and referrers; your
 designs and uploaded files are never sent. Turn off **Online image search** in Settings to disable
-this feature. Editing and bundled content use local resources; installable offline caching is
-planned for step 7.
+this feature. Editing and bundled content use local resources. The offline copy of the app is
+kept in the browser's site storage, like your designs; it contains only the app's own public
+files.
 
 ## License
 

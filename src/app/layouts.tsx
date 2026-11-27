@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP } from '@/config/app';
+import { OfflineNotices } from '@/pwa/OfflineNotices';
 import { PageSeo } from '@/seo/PageSeo';
 import { AboutDialog, useAboutDialog } from './about';
 import { ThemeMenu, ThemeSync } from './theme';
@@ -18,6 +19,7 @@ export function RootLayout() {
       <ThemeSync />
       <Outlet />
       <AboutDialog />
+      <OfflineNotices />
       <Toaster position="bottom-center" />
     </>
   );

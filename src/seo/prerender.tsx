@@ -85,8 +85,9 @@ function StaticPage({ page }: { page: PublicPage }) {
               custom dimensions. Use colour palettes and font pairings to make each design your own.
             </p>
             <p>
-              Your work is saved in this browser. No account or backend is required. Printing and
-              export tools are planned for a later release.
+              Your work is saved in this browser. No account or backend is required. Print at true
+              size on any paper, tile posters across sheets, or download PNG, JPG and PDF files.
+              Install the app to start it and keep designing without an internet connection.
             </p>
           </section>
         )}
@@ -106,6 +107,11 @@ function StaticPage({ page }: { page: PublicPage }) {
             <p>
               View browser storage usage and request persistent storage. Enable JavaScript to change
               settings on this device.
+            </p>
+            <h2 className="font-semibold text-xl">Offline use</h2>
+            <p>
+              Install the app, check that it is ready to work offline, and save the fonts for every
+              writing system for use without an internet connection.
             </p>
           </section>
         )}
@@ -133,12 +139,64 @@ function StaticPage({ page }: { page: PublicPage }) {
   );
 }
 
+/**
+ * The install manifest. URLs are relative to the manifest, so the same file works at the
+ * domain root and in a sub-folder. The app name comes from `APP`, like everywhere else.
+ */
+export function webManifest(): string {
+  const icon = (src: string, size: number, purpose?: 'maskable') => ({
+    src,
+    sizes: `${size}x${size}`,
+    type: 'image/png',
+    ...(purpose ? { purpose } : {}),
+  });
+  return `${JSON.stringify(
+    {
+      name: APP.name,
+      short_name: APP.shortName,
+      description: pageMetadata('/').description,
+      lang: 'en',
+      dir: 'ltr',
+      start_url: './',
+      scope: './',
+      display: 'standalone',
+      orientation: 'any',
+      background_color: '#fcfcfd',
+      theme_color: '#fcfcfd',
+      categories: ['design', 'graphics', 'productivity'],
+      icons: [
+        { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+        icon('icons/icon-192.png', 192),
+        icon('icons/icon-512.png', 512),
+        icon('icons/maskable-512.png', 512, 'maskable'),
+      ],
+      shortcuts: [
+        {
+          name: en.nav.templates,
+          url: 'templates',
+          icons: [icon('icons/icon-192.png', 192)],
+        },
+      ],
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+/** Installing the app: the manifest, and the home-screen icon and name for iPhone and iPad. */
+const installHead = [
+  `<link rel="manifest" href="${escapeHtml(localPath('/manifest.webmanifest'))}">`,
+  `<link rel="apple-touch-icon" href="${escapeHtml(localPath('/icons/apple-touch-icon.png'))}">`,
+  `<meta name="apple-mobile-web-app-title" content="${escapeHtml(APP.shortName)}">`,
+].join('\n    ');
+
 export function renderPublicFiles(shell: string): { path: string; content: string }[] {
   if (!shell.includes('<!--seo-->') || !shell.includes('<div id="root"></div>'))
     throw new Error('The static HTML shell is missing its SEO or root marker.');
   const render = (path: string, body: string) =>
     shell
       .replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, renderSeoHead(pageMetadata(path)))
+      .replace('</head>', `  ${installHead}\n  </head>`)
       .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
   const files = PUBLIC_PAGES.map((page) => ({
     path: page.path === '/' ? 'index.html' : `${page.path.slice(1)}/index.html`,
@@ -169,6 +227,24 @@ export function renderPublicFiles(shell: string): { path: string; content: strin
       content: `User-agent: *\nAllow: /\n\nSitemap: ${publicUrl('/sitemap.xml')}\n`,
     },
     { path: 'CNAME', content: `${new URL(SITE_URL).hostname}\n` },
+    { path: 'manifest.webmanifest', content: webManifest() },
+    // Netlify / Cloudflare Pages: the service worker and manifest are always revalidated, so
+    // updates arrive; file names in assets/ contain a content hash and never change.
+    {
+      path: '_headers',
+      content: [
+        `${BASE_PATH}/sw.js`,
+        '  Cache-Control: no-cache',
+        `${BASE_PATH}/manifest.webmanifest`,
+        '  Cache-Control: no-cache',
+        '  Content-Type: application/manifest+json',
+        `${BASE_PATH}/offline-fonts.json`,
+        '  Cache-Control: no-cache',
+        `${BASE_PATH}/assets/*`,
+        '  Cache-Control: public, max-age=31536000, immutable',
+        '',
+      ].join('\n'),
+    },
     // Netlify / Cloudflare Pages: real public HTML, local editor shell, and real 404s.
     {
       path: '_redirects',

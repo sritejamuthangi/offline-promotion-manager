@@ -16,6 +16,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     locale: 'en-GB',
     trace: 'on-first-retry',
+    // Each test starts without the offline service worker; offline.spec.ts turns it on.
+    serviceWorkers: 'block',
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], channel } },

@@ -738,6 +738,33 @@
     "aboutTitle": "About",
     "openAbout": "About this app"
   },
+  "offline": {
+    "title": "Offline use",
+    "description": "The app is kept on this device, so it starts and works without an internet connection.",
+    "status": {
+      "ready": "Ready to work offline. The app and its included fonts are saved on this device.",
+      "preparing": "Saving the app for offline use…",
+      "failed": "Offline use isn’t available in this browser window (for example in some private windows). Your designs are still saved on this device.",
+      "unsupported": "This browser can’t keep the app for offline use. Your designs are still saved on this device.",
+      "development": "Offline use is part of the built app (npm run build), not the development server."
+    },
+    "installTitle": "Install",
+    "install": "Install app",
+    "installed": "Installed on this device.",
+    "installHint": "Your browser may offer to install the app from its menu or address bar. Installed, it opens in its own window like other apps.",
+    "installApple": "On iPhone or iPad, tap Share, then Add to Home Screen.",
+    "fontsTitle": "Fonts for every writing system",
+    "fontsBody": "Fonts for writing systems such as Arabic, Devanagari, Chinese or Japanese download the first time a design uses them. Save them all now ({{size}}) to use any language offline.",
+    "fontsSave": "Save all fonts",
+    "fontsSaving": "Saving fonts… {{percent}}%",
+    "fontsPartial": "{{saved}} of {{total}} font files saved.",
+    "fontsDone": "All fonts are saved on this device.",
+    "fontsSaved": "All fonts saved for offline use",
+    "fontsFailed": "Fonts couldn’t be saved. Check your connection and storage space, then try again.",
+    "readyToast": "Ready to work offline",
+    "updateToast": "A new version of the app is ready.",
+    "update": "Update"
+  },
   "notFound": {
     "title": "Page not found",
     "body": "The page you’re looking for doesn’t exist.",

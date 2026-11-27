@@ -21,6 +21,21 @@ Local `/design/<id>` routes load `editor.html` and carry `noindex, follow`. Unkn
 return a real HTTP 404. The `?category=mine` view contains personal saved templates and is noindex
 after the app opens. Do not rewrite every unknown URL to the home page: this creates soft 404s.
 
+## Offline app files
+
+The build adds `sw.js` (the service worker), `manifest.webmanifest`, `offline-fonts.json` and the
+icons in `icons/`. Requirements for offline use and installation:
+
+- Serve the site over HTTPS (`localhost` works for testing).
+- Serve `sw.js`, `manifest.webmanifest` and `offline-fonts.json` with `Cache-Control: no-cache`,
+  so new versions reach people. `vercel.json` and the generated `_headers` (Netlify, Cloudflare
+  Pages) set this, and mark the content-hashed files in `assets/` as immutable.
+- Keep `sw.js` at the root of the base path; its scope is the whole app.
+
+People keep the version they have until they choose **Update**, so a deployment never changes the
+code under an open design. To withdraw offline support, publish a `sw.js` that unregisters itself
+rather than deleting the file, because browsers keep a worker whose script disappears.
+
 ## Vercel
 
 Import the repository, use `npm run build`, and publish `dist`. The checked-in `vercel.json`
