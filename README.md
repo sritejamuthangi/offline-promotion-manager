@@ -200,8 +200,11 @@ template and settings pages. Public URLs use clean paths, with metadata and a si
 **https://opm.sritejam.com**. Old `/#/…` bookmarks still open their corresponding pages.
 
 Vercel routing is in `vercel.json`; Netlify/Cloudflare Pages rules are generated in `dist/_redirects`.
-Configure the host's custom domain and DNS for `opm.sritejam.com`. See
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for other hosts, sub-folder builds and indexing setup.
+Configure the host's custom domain and DNS for `opm.sritejam.com`. `robots.txt` and `sitemap.xml`
+are generated on every build, and the social preview at `/og-image.png` ships as a static public
+asset. To verify the site in Google Search Console, set `VITE_GOOGLE_SITE_VERIFICATION` (or paste
+Google's meta tag into `index.html`). See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for other hosts,
+sub-folder builds and indexing setup.
 
 ## How it is built
 

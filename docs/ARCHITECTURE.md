@@ -259,6 +259,29 @@ saved in one transaction. The Settings card shows the preview, per-picture progr
 quota, damaged files, other ZIP files and files from a newer version. The reader also accepts
 single-design files (`kind: "design"`), though the current UI only creates full backups.
 
+## Search metadata
+
+`src/seo/pages.ts` builds titles, descriptions, keywords, canonical URLs, Open Graph/Twitter tags
+and JSON-LD for the public pages, and `src/seo/prerender.tsx` renders the same head into the static
+files. Public pages are the home page, the catalogue, seven category pages, every template and
+Settings; local designs, saved templates and unknown routes are `noindex` and stay out of the
+sitemap.
+
+- **Keywords:** broad studio terms plus each page's template names, tags and category. The
+  `<meta name="keywords">` tag is written for completeness; Google weighs page content itself, while
+  Bing and other engines read it lightly.
+- **Social previews:** every public page carries the 1200×630 social preview in
+  `public/og-image.png` (rendered by `scripts/generate-og-image.mjs`), with `og:image` and
+  `twitter:image`, width, height and alt, and `twitter:card: summary_large_image`.
+- **Canonical and language links:** one `<link rel="canonical">` per page, `og:url`, `og:locale` and
+  `hreflang="en"` plus `x-default` pointing at it.
+- **Structured data:** the JSON-LD graph includes `WebSite`, `SoftwareApplication` and `CreativeWork`
+  with URLs, images, keywords, offers and licensing.
+
+Google verification is added by a build-time token (`VITE_GOOGLE_SITE_VERIFICATION`) or by pasting
+Google's meta tag into `index.html`; the injection is covered by unit tests and documented in
+`docs/DEPLOYMENT.md`.
+
 ## Internationalisation
 
 - All UI text lives in `src/i18n/locales/*.json`. Keys are type-checked through

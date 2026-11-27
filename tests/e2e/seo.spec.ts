@@ -6,6 +6,8 @@ test('every sitemap URL returns meaningful HTML with matching canonical metadata
   request,
 }) => {
   const robots = await request.get('/robots.txt');
+  expect(await robots.text()).toContain('User-agent: *');
+  expect(await robots.text()).toContain('Allow: /');
   expect(await robots.text()).toContain(`Sitemap: ${DOMAIN}/sitemap.xml`);
   const sitemap = await request.get('/sitemap.xml');
   const xml = await sitemap.text();
@@ -27,6 +29,29 @@ test('every sitemap URL returns meaningful HTML with matching canonical metadata
     const json = /<script data-seo type="application\/ld\+json">(.*?)<\/script>/.exec(html)?.[1];
     expect(JSON.parse(json ?? '{}')['@context']).toBe('https://schema.org');
   }
+});
+
+test('public pages carry keywords and social previews', async ({ request }) => {
+  const home = await (await request.get('/')).text();
+  expect(home).toContain('name="keywords"');
+  expect(home).toContain('property="og:image" content="https://opm.sritejam.com/og-image.png">');
+  expect(home).toContain('property="og:image:type" content="image/png">');
+  expect(home).toContain('property="og:image:width" content="1200">');
+  expect(home).toContain('property="og:image:height" content="630">');
+  expect(home).toContain('property="og:image:alt" content="Offline Promotion Manager');
+  expect(home).toContain('name="twitter:card" content="summary_large_image">');
+  expect(home).toContain('name="twitter:image" content="https://opm.sritejam.com/og-image.png">');
+
+  const template = await (await request.get('/templates/restaurant-menu')).text();
+  expect(template).toContain('name="keywords"');
+  expect(template).toContain('content="free design tool, poster maker');
+  expect(template).toContain(
+    'property="og:image" content="https://opm.sritejam.com/og-image.png">',
+  );
+
+  const image = await request.get('/og-image.png');
+  expect(image.status()).toBe(200);
+  expect(image.headers()['content-type']).toContain('image/png');
 });
 
 test('template links have clean URLs, survive reload and update metadata', async ({ page }) => {

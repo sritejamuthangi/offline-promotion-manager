@@ -1,11 +1,18 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { APP } from '@/config/app';
-import { BASE_PATH, localPath, publicUrl, SITE_URL } from '@/config/site';
+import { BASE_PATH, GOOGLE_SITE_VERIFICATION, localPath, publicUrl, SITE_URL } from '@/config/site';
 import { TEMPLATE_CATEGORY_INFO } from '@/content/templateCategories';
 import { getPreset } from '@/core/paper';
 import { TEMPLATE_CATEGORIES } from '@/core/templates';
 import en from '@/i18n/locales/en.json';
-import { escapeHtml, PUBLIC_PAGES, type PublicPage, pageMetadata, renderSeoHead } from './pages';
+import {
+  escapeHtml,
+  googleVerificationMeta,
+  PUBLIC_PAGES,
+  type PublicPage,
+  pageMetadata,
+  renderSeoHead,
+} from './pages';
 
 const linkClass = 'text-primary underline-offset-4 hover:underline';
 
@@ -184,11 +191,14 @@ export function webManifest(): string {
 }
 
 /** Installing the app: the manifest, and the home-screen icon and name for iPhone and iPad. */
-const installHead = [
+const extraHead = [
   `<link rel="manifest" href="${escapeHtml(localPath('/manifest.webmanifest'))}">`,
   `<link rel="apple-touch-icon" href="${escapeHtml(localPath('/icons/apple-touch-icon.png'))}">`,
   `<meta name="apple-mobile-web-app-title" content="${escapeHtml(APP.shortName)}">`,
-].join('\n    ');
+  googleVerificationMeta(GOOGLE_SITE_VERIFICATION),
+]
+  .filter(Boolean)
+  .join('\n    ');
 
 export function renderPublicFiles(shell: string): { path: string; content: string }[] {
   if (!shell.includes('<!--seo-->') || !shell.includes('<div id="root"></div>'))
@@ -196,7 +206,7 @@ export function renderPublicFiles(shell: string): { path: string; content: strin
   const render = (path: string, body: string) =>
     shell
       .replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, renderSeoHead(pageMetadata(path)))
-      .replace('</head>', `  ${installHead}\n  </head>`)
+      .replace('</head>', `  ${extraHead}\n  </head>`)
       .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
   const files = PUBLIC_PAGES.map((page) => ({
     path: page.path === '/' ? 'index.html' : `${page.path.slice(1)}/index.html`,

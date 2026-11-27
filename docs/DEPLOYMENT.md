@@ -12,6 +12,9 @@ The build generates 60 public pages from the bundled content:
 - `/templates/<template-id>` for every bundled template (currently 50)
 - `/settings`
 
+Static public assets served from `public/` are the icon, the favicon and the social preview
+`og-image.png` (1200×630, rendered by `scripts/generate-og-image.mjs`).
+
 Each has readable HTML before JavaScript, a unique title and description, an absolute canonical
 URL, Open Graph/Twitter metadata and JSON-LD. The sitemap is generated from the same catalogue, so
 adding a template also adds its public page and sitemap entry. Client-side navigation updates the
@@ -80,10 +83,30 @@ browser to clean paths.
 
 ## Indexing after deployment
 
+`npm run build` generates `robots.txt` and `sitemap.xml`; do not add or edit them in `public/`.
+`robots.txt` allows crawling and points to the sitemap, and the sitemap lists every public page:
+the home page, the catalogue, seven category pages, all 50 templates and Settings. Local designs,
+saved templates and unknown routes are `noindex` and are not listed.
+
 1. Open `https://opm.sritejam.com/robots.txt` and `/sitemap.xml` on the deployed host.
 2. Check that a direct visit and reload at `/templates/restaurant-menu` work.
-3. Verify the domain in Google Search Console and Bing Webmaster Tools.
+3. Verify the domain in Google Search Console (below) and Bing Webmaster Tools.
 4. Submit `https://opm.sritejam.com/sitemap.xml` and request indexing for the home page.
+
+### Google Search Console verification
+
+Choose one method, then rebuild and redeploy:
+
+- **Meta tag (recommended):** set `VITE_GOOGLE_SITE_VERIFICATION` to the `content` value Search
+  Console shows, for example `abc123…`, in the host's build environment or in `.env.production`.
+  The build adds `<meta name="google-site-verification" content="abc123…">` to every page.
+- **Meta tag in the shell:** paste Google's full `<meta name="google-site-verification" …>` tag
+  into the `<head>` of `index.html`. The prerender step keeps it on every generated page.
+- **HTML file:** put the file Google gives you, such as `google1234.html`, in `public/`. It is
+  copied to the site root and served at `https://opm.sritejam.com/google1234.html`.
+
+Verification succeeds only after the new build is live at the domain. Then submit the sitemap in
+Search Console. The same sitemap can be submitted to Bing Webmaster Tools.
 
 The application makes public pages crawlable; search engines decide when to index them. DNS,
 hosting and webmaster-tool verification are completed in the respective accounts.
