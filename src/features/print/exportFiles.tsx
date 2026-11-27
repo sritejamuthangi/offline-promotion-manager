@@ -1,11 +1,11 @@
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { APP } from '@/config/app';
+import { isScriptFontPoint } from '@/core/fonts';
 import {
   createPdf,
   DESKTOP_MAX_PIXELS,
   designSheet,
-  fontUsage,
   imageSources,
   MARK_STROKE,
   MOBILE_MAX_PIXELS,
@@ -17,11 +17,12 @@ import {
   rasterSize,
   setJpegDpi,
   setPngDpi,
-  textCodePoints,
+  textRuns,
 } from '@/core/print';
 import type { Design } from '@/core/schema';
 import { assetIdFromSrc } from '@/render/assetUrl';
 import { assetRepository } from '@/storage';
+import { loadScriptFonts } from '@/styles/loadScriptFonts';
 import { blobToDataUrl, embeddedFontCss } from './fontEmbedding';
 import { PrintArtwork } from './PrintArtwork';
 
@@ -113,8 +114,15 @@ interface Embedded {
 }
 
 /** Prepare font bytes while the download preview is open, for offline file creation. */
-export function prepareExportFonts(design: Design, pages: readonly number[]): Promise<string> {
-  return embeddedFontCss(fontUsage(design, pages), textCodePoints(design, pages));
+export async function prepareExportFonts(
+  design: Design,
+  pages: readonly number[],
+): Promise<string> {
+  const runs = textRuns(design, pages);
+  // Without them (offline, never loaded), the device's fonts draw other writing systems.
+  if (runs.some((run) => run.codePoints.some(isScriptFontPoint)))
+    await loadScriptFonts().catch(() => undefined);
+  return embeddedFontCss(runs);
 }
 
 async function embed(design: Design, pages: readonly number[]): Promise<Embedded> {

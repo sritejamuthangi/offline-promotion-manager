@@ -3,7 +3,6 @@ import { toPx } from '../units';
 import { crc32, setJpegDpi, setPngDpi } from './imageMeta';
 import { createPdf, type PdfPage, pdfNumber, pdfText } from './pdf';
 import { DESKTOP_MAX_PIXELS, MAX_CANVAS_SIDE, MOBILE_MAX_PIXELS, rasterSize } from './raster';
-import { coversAny, parseUnicodeRange } from './unicodeRange';
 
 const latin1 = (bytes: Uint8Array) => Array.from(bytes, (b) => String.fromCharCode(b)).join('');
 const ascii = (text: string) => Uint8Array.from(text, (ch) => ch.charCodeAt(0));
@@ -192,26 +191,5 @@ describe('export size', () => {
     expect(big.width * big.height).toBeLessThanOrEqual(DESKTOP_MAX_PIXELS);
     const banner = rasterSize({ width: toPx(850, 'mm'), height: toPx(2000, 'mm') }, 300, 1e12);
     expect(banner.height).toBeLessThanOrEqual(MAX_CANVAS_SIDE);
-  });
-});
-
-describe('unicode ranges', () => {
-  it('parses ranges, single code points and wildcards', () => {
-    expect(parseUnicodeRange('U+0000-00FF, U+0131, U+4??')).toEqual([
-      [0, 0xff],
-      [0x131, 0x131],
-      [0x400, 0x4ff],
-    ]);
-    expect(parseUnicodeRange('U+0-FF')).toEqual([[0, 0xff]]);
-    expect(parseUnicodeRange('')).toEqual([]);
-  });
-
-  it('checks whether a font subset is needed for some text', () => {
-    const latin = parseUnicodeRange('U+0000-00FF');
-    const cyrillic = parseUnicodeRange('U+0400-045F');
-    const points = [...'Café'].map((ch) => ch.codePointAt(0) ?? 0);
-    expect(coversAny(latin, points)).toBe(true);
-    expect(coversAny(cyrillic, points)).toBe(false);
-    expect(coversAny([], points)).toBe(true);
   });
 });

@@ -3,12 +3,14 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { FONTS, getFont } from '@/core/fonts';
 import { useEditor } from './EditorContext';
 
-const INCLUDED = FONTS.filter((font) => font.bundled);
+const INCLUDED = FONTS.filter((font) => font.bundled && !font.script);
+const SCRIPTS = FONTS.filter((font) => font.bundled && font.script);
 const DEVICE = FONTS.filter((font) => !font.bundled);
 
 /**
  * Picks a font: the theme's heading and body slots (which follow one-click styles), fonts
- * included with the app, or fonts installed on this device.
+ * included with the app, fonts for other writing systems, or fonts installed on this device.
+ * Text in other writing systems already falls back to the included world-script fonts.
  */
 export function FontSelect({
   id,
@@ -37,6 +39,13 @@ export function FontSelect({
         {INCLUDED.map((font) => (
           <option key={font.family} value={font.family}>
             {font.family}
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label={t('editor.fontGroups.scripts')}>
+        {SCRIPTS.map((font) => (
+          <option key={font.family} value={font.family}>
+            {`${font.family} · ${font.script?.sample ?? ''}`}
           </option>
         ))}
       </optgroup>

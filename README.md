@@ -15,7 +15,7 @@
 - **Free for everyone.** Every template and feature, no paywall, no watermark on your prints.
 - **Private.** Designs and images are saved only in your browser (IndexedDB). Nothing is uploaded.
 - **Made to print at true size.** Use international, US or custom paper, fit designs to a sheet, repeat cards and labels, or tile a large poster across smaller sheets.
-- **Made for the whole world.** A4 and millimetres or US Letter and inches depending on your region (already working), with every writing system and right-to-left languages as the editor grows.
+- **Made for the whole world.** A4 and millimetres or US Letter and inches depending on your region, bundled fonts for more than 20 writing systems, and right-to-left text.
 - **Open source (MIT).** Use it, change it, host it yourself, ship it in your own products.
 
 ## Status
@@ -89,6 +89,18 @@ Use **Save as template** in the editor header or a home-screen design menu. It s
 snapshot under **Your templates**. Rename or delete saved templates from their preview, or start
 as many new designs from them as you like.
 
+### Languages and writing systems
+
+Type in any language. Besides the 15 design fonts for Latin, Greek and Cyrillic, the app bundles
+Noto fonts for Arabic, Hebrew, Devanagari, Bengali, Gurmukhi, Gujarati, Odia, Tamil, Telugu,
+Kannada, Malayalam, Sinhala, Thai, Lao, Khmer, Myanmar, Ethiopic, Armenian, Georgian, Chinese
+(simplified and traditional), Japanese and Korean. They draw any letters the chosen font lacks,
+so a design looks the same on every device, on paper and in downloads; you can also pick one
+directly under **Font → World scripts**. Chinese characters take the Japanese or Korean style in
+Japanese or Korean text, and otherwise follow the design's language (traditional characters for
+Taiwan, Hong Kong and Macao). The fonts load only once a design contains such text, and browsers
+download only the character ranges it uses. Emoji use the device's emoji font.
+
 ### Printing and downloads
 
 Choose **Print** in the editor header, or press **Ctrl/⌘ + P**. The live preview shows the
@@ -140,9 +152,7 @@ across reloads remains part of step 7.
 | Add text / rectangle / ellipse / line | T / R / O / L                                                          |
 | Print / download options              | Ctrl/⌘ + P                                                             |
 
-Keyboard shortcuts apply when focus is outside text and number fields. Multilingual text uses
-the browser's shaping and the fonts available on your device; additional bundled script fonts
-are planned.
+Keyboard shortcuts apply when focus is outside text and number fields.
 
 | Command            | What it does                                                 |
 | ------------------ | ------------------------------------------------------------ |

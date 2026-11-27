@@ -355,6 +355,7 @@
     "fontGroups": {
       "theme": "Theme fonts",
       "included": "Included fonts (work offline)",
+      "scripts": "World scripts (included)",
       "device": "Fonts on this device",
       "other": "Other"
     },

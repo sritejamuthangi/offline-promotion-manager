@@ -1,4 +1,5 @@
-import { coversAny, parseUnicodeRange } from '@/core/print';
+import { type FaceInfo, selectFaces, type TextRun } from '@/core/print';
+import { parseUnicodeRange } from '@/core/unicode';
 
 /** Reads a blob as a `data:` URL. */
 export function blobToDataUrl(blob: Blob): Promise<string> {
@@ -31,28 +32,25 @@ function fontDataUrl(url: string): Promise<string> {
   return pending;
 }
 
-function* fontFaces(rules: CSSRuleList): Generator<CSSFontFaceRule> {
+function* fontFaceRules(rules: CSSRuleList): Generator<CSSFontFaceRule> {
   for (const rule of rules) {
     if (rule instanceof CSSFontFaceRule) yield rule;
     else if (rule instanceof CSSImportRule) {
-      if (rule.styleSheet) yield* fontFaces(rule.styleSheet.cssRules);
+      if (rule.styleSheet) yield* fontFaceRules(rule.styleSheet.cssRules);
     } else if ('cssRules' in rule && rule.cssRules instanceof CSSRuleList)
-      yield* fontFaces(rule.cssRules);
+      yield* fontFaceRules(rule.cssRules);
   }
 }
 
 const unquote = (value: string) => value.trim().replace(/^(['"])(.*)\1$/, '$2');
 
-/**
- * `@font-face` rules with the font files inlined, for the given families and only the
- * character subsets the text needs. Exported images draw text with these, since an image
- * cannot load fonts from the app.
- */
-export async function embeddedFontCss(
-  families: ReadonlyMap<string, ReadonlySet<string>>,
-  codePoints: ReadonlySet<number>,
-): Promise<string> {
-  const faces: Promise<string>[] = [];
+interface DocumentFace extends FaceInfo {
+  rule: CSSFontFaceRule;
+}
+
+/** Every `@font-face` rule of the app's own stylesheets. */
+function documentFaces(): DocumentFace[] {
+  const faces: DocumentFace[] = [];
   for (const sheet of Array.from(document.styleSheets)) {
     let rules: CSSRuleList;
     try {
@@ -60,28 +58,49 @@ export async function embeddedFontCss(
     } catch {
       continue; // Stylesheets from other sites can't be read; the app has none.
     }
-    for (const rule of fontFaces(rules)) {
+    for (const rule of fontFaceRules(rules)) {
       const style = rule.style;
-      const family = unquote(style.getPropertyValue('font-family'));
-      if (!families.get(family)?.has(style.getPropertyValue('font-style').trim() || 'normal'))
-        continue;
-      const range = style.getPropertyValue('unicode-range').trim();
-      if (range && !coversAny(parseUnicodeRange(range), codePoints)) continue;
-      const source = /url\(\s*(['"]?)([^'")]+)\1\s*\)/.exec(style.getPropertyValue('src'))?.[2];
-      if (!source) continue;
-      const base = rule.parentStyleSheet?.href ?? document.baseURI;
-      const descriptors = ['font-style', 'font-weight', 'font-stretch', 'unicode-range']
-        .map((name) => [name, style.getPropertyValue(name).trim()] as const)
-        .filter(([, value]) => value)
-        .map(([name, value]) => `${name}:${value}`);
-      faces.push(
-        fontDataUrl(new URL(source, base).href).then((data) =>
-          data
-            ? `@font-face{font-family:${JSON.stringify(family)};src:url(${data});font-display:block;${descriptors.join(';')}}`
-            : '',
-        ),
-      );
+      faces.push({
+        rule,
+        family: unquote(style.getPropertyValue('font-family')),
+        style: style.getPropertyValue('font-style').trim() || 'normal',
+        ranges: parseUnicodeRange(style.getPropertyValue('unicode-range')),
+      });
     }
   }
-  return (await Promise.all(faces)).join('');
+  return faces;
+}
+
+async function inlineFace({ rule, family }: DocumentFace): Promise<string> {
+  const style = rule.style;
+  const source = /url\(\s*(['"]?)([^'")]+)\1\s*\)/.exec(style.getPropertyValue('src'))?.[2];
+  if (!source) return '';
+  const base = rule.parentStyleSheet?.href ?? document.baseURI;
+  const data = await fontDataUrl(new URL(source, base).href);
+  const descriptors = ['font-style', 'font-weight', 'font-stretch', 'unicode-range']
+    .map((name) => [name, style.getPropertyValue(name).trim()] as const)
+    .filter(([, value]) => value)
+    .map(([name, value]) => `${name}:${value}`);
+  return `@font-face{font-family:${JSON.stringify(family)};src:url(${data});font-display:block;${descriptors.join(';')}}`;
+}
+
+/**
+ * `@font-face` rules with the font files inlined, for exactly the faces the browser draws
+ * the text with. An exported image can't load fonts from the app, so they travel inside it.
+ * The chosen fonts must load; a writing-system fallback that can't be loaded (offline, not
+ * yet downloaded) is left out, and the device's own fonts draw that text instead.
+ */
+export async function embeddedFontCss(runs: readonly TextRun[]): Promise<string> {
+  const needed = selectFaces(documentFaces(), runs);
+  const css = await Promise.all(
+    [...needed].map(([face, required]) =>
+      required
+        ? inlineFace(face)
+        : inlineFace(face).catch((error: unknown) => {
+            console.warn(`Export continues without ${face.family}`, error);
+            return '';
+          }),
+    ),
+  );
+  return css.join('');
 }

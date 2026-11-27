@@ -31,6 +31,7 @@ import { useEffectivePaper, useEffectiveUnit } from '@/features/settings/setting
 import { useElementSize } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { preloadAssets } from '@/render/assetUrl';
+import { loadScriptFonts } from '@/styles/loadScriptFonts';
 import {
   downloadBlob,
   exportFileName,
@@ -134,7 +135,11 @@ export function PrintDialog({
       const pages = [
         ...new Set(data.plan.sheets.flatMap((sheet) => sheet.placements.map((p) => p.pageIndex))),
       ];
-      await preloadAssets(imageSources(data.design, pages));
+      await Promise.all([
+        preloadAssets(imageSources(data.design, pages)),
+        // Without them, the device's fonts draw other writing systems.
+        loadScriptFonts().catch(() => undefined),
+      ]);
       if (request === printRequest.current) {
         setJob(data);
         setPrinting(true);

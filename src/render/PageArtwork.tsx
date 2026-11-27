@@ -1,6 +1,6 @@
-import { type CSSProperties, memo, useId, useMemo } from 'react';
+import { type CSSProperties, memo, useEffect, useId, useMemo } from 'react';
 import { encode } from 'uqr';
-import { fontStack } from '@/core/fonts';
+import { type FontContext, fontStack, usesScriptFonts } from '@/core/fonts';
 import { smartGridRows } from '@/core/layout/balancedRows';
 import type {
   Design,
@@ -20,6 +20,7 @@ import type {
 import { resolveColor, resolveFont } from '@/core/schema';
 import { pointsToSvg, shapePoints } from '@/core/shapes';
 import { stickerPath } from '@/core/stickers';
+import { loadScriptFonts } from '@/styles/loadScriptFonts';
 import { ICON_COMPONENTS } from './icons';
 import { useImageSrc } from './imageSource';
 import { useFillCss } from './useFillCss';
@@ -38,6 +39,21 @@ export const PageArtwork = memo(function PageArtwork({
 }) {
   const page = design.pages[pageIndex];
   const background = useFillCss(page?.background, design.theme, design, resolveSrc);
+  const scripts = useMemo(
+    () =>
+      page?.elements.some(
+        (e) =>
+          (e.type === 'text' && usesScriptFonts(e.text)) ||
+          (e.type === 'grid' &&
+            e.items.some((item) => usesScriptFonts(`${item.name}${item.subtitle ?? ''}`))),
+      ) ?? false,
+    [page],
+  );
+  useEffect(() => {
+    // Writing-system fonts load on first use; the browser then redraws the text with them.
+    if (scripts) loadScriptFonts().catch(() => undefined);
+  }, [scripts]);
+  const locale = design.meta.locale;
   // Inline styles only: print sheets and image exports reuse this markup without app CSS.
   return (
     <div
@@ -58,6 +74,7 @@ export const PageArtwork = memo(function PageArtwork({
             key={element.id}
             element={element}
             theme={design.theme}
+            locale={locale}
             invisible={editingId === element.id}
             resolveSrc={resolveSrc}
           />
@@ -81,9 +98,10 @@ export function elementFrame(
   };
 }
 
-export function textCss(style: TextStyle, theme: Theme): CSSProperties {
+/** `context` gives the text and the design's language, which order writing-system fonts. */
+export function textCss(style: TextStyle, theme: Theme, context?: FontContext): CSSProperties {
   return {
-    fontFamily: fontStack(resolveFont(style.fontFamily, theme)),
+    fontFamily: fontStack(resolveFont(style.fontFamily, theme), context),
     fontSize: style.fontSize,
     fontWeight: style.fontWeight,
     fontStyle: style.italic ? 'italic' : 'normal',
@@ -115,11 +133,13 @@ function svgId(raw: string, prefix: string): string {
 const ElementArtwork = memo(function ElementArtwork({
   element: e,
   theme,
+  locale,
   invisible,
   resolveSrc,
 }: {
   element: DesignElement;
   theme: Theme;
+  locale?: string;
   invisible?: boolean;
   resolveSrc?: (source: string) => string | undefined;
 }) {
@@ -142,7 +162,7 @@ const ElementArtwork = memo(function ElementArtwork({
         <div
           dir={e.direction ?? 'auto'}
           style={{
-            ...textCss(e.style, theme),
+            ...textCss(e.style, theme, { text: e.text, locale }),
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
@@ -161,7 +181,9 @@ const ElementArtwork = memo(function ElementArtwork({
       {e.type === 'icon' && <IconArtwork element={e} theme={theme} />}
       {e.type === 'sticker' && <StickerArtwork element={e} theme={theme} />}
       {e.type === 'qr' && <QrArtwork element={e} theme={theme} />}
-      {e.type === 'grid' && <GridArtwork element={e} theme={theme} resolveSrc={resolveSrc} />}
+      {e.type === 'grid' && (
+        <GridArtwork element={e} theme={theme} locale={locale} resolveSrc={resolveSrc} />
+      )}
     </div>
   );
 });
@@ -476,10 +498,12 @@ function QrArtwork({ element: e, theme }: { element: QrElement; theme: Theme }) 
 function GridArtwork({
   element: e,
   theme,
+  locale,
   resolveSrc,
 }: {
   element: GridElement;
   theme: Theme;
+  locale?: string;
   resolveSrc?: (source: string) => string | undefined;
 }) {
   const cardBackground = useFillCss(e.cardFill, theme, undefined, resolveSrc);
@@ -552,10 +576,22 @@ function GridArtwork({
                   overflow: 'hidden',
                 }}
               >
-                <GridLogo item={item} height={e.logoHeight} theme={theme} resolveSrc={resolveSrc} />
+                <GridLogo
+                  item={item}
+                  height={e.logoHeight}
+                  theme={theme}
+                  fontFamily={fontStack(resolveFont(e.nameStyle.fontFamily, theme), {
+                    text: item.name,
+                    locale,
+                  })}
+                  resolveSrc={resolveSrc}
+                />
                 <div
                   style={{
-                    fontFamily: fontStack(resolveFont(e.nameStyle.fontFamily, theme)),
+                    fontFamily: fontStack(resolveFont(e.nameStyle.fontFamily, theme), {
+                      text: item.name,
+                      locale,
+                    }),
                     fontSize: e.nameStyle.fontSize,
                     fontWeight: e.nameStyle.fontWeight,
                     color: resolveColor(e.nameStyle.color, theme),
@@ -571,7 +607,10 @@ function GridArtwork({
                 {item.subtitle && (
                   <div
                     style={{
-                      fontFamily: fontStack(resolveFont(e.subtitleStyle.fontFamily, theme)),
+                      fontFamily: fontStack(resolveFont(e.subtitleStyle.fontFamily, theme), {
+                        text: item.subtitle,
+                        locale,
+                      }),
                       fontSize: e.subtitleStyle.fontSize,
                       fontWeight: e.subtitleStyle.fontWeight,
                       color: resolveColor(e.subtitleStyle.color, theme),
@@ -598,11 +637,14 @@ function GridLogo({
   item,
   height,
   theme,
+  fontFamily,
   resolveSrc,
 }: {
   item: GridItem;
   height: number;
   theme: Theme;
+  /** For the first letter shown without a logo: the name's font. */
+  fontFamily: string;
   resolveSrc?: (source: string) => string | undefined;
 }) {
   const imageUrl = useImageSrc(item.logoSrc, theme);
@@ -629,6 +671,7 @@ function GridLogo({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        fontFamily,
         fontSize: height * 0.42,
         fontWeight: 700,
         lineHeight: 1,

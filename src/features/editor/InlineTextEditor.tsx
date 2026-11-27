@@ -18,6 +18,7 @@ export function InlineTextEditor({
   const { t } = useTranslation();
   const store = useEditorStore();
   const theme = useEditor((s) => s.doc.theme);
+  const locale = useEditor((s) => s.doc.meta.locale);
   const ref = useRef<HTMLTextAreaElement>(null);
   const [padding, setPadding] = useState(0);
   useLayoutEffect(() => {
@@ -49,7 +50,7 @@ export function InlineTextEditor({
       className="absolute resize-none overflow-hidden border-0 bg-transparent outline-violet-600"
       style={{
         ...elementFrame(element),
-        ...textCss(element.style, theme),
+        ...textCss(element.style, theme, { text: element.text, locale }),
         padding: 0,
         paddingTop: padding,
         outlineWidth: 1 / zoom,

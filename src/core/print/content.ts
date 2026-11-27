@@ -1,5 +1,6 @@
-import { getFont } from '../fonts';
+import { fontFamilies, getFont, registeredNames } from '../fonts';
 import { type Design, type Fill, type Page, resolveFont } from '../schema';
+import { codePointsOf } from '../unicode';
 
 function pagesOf(design: Design, pageIndexes?: readonly number[]): Page[] {
   if (!pageIndexes) return design.pages;
@@ -28,55 +29,58 @@ export function imageSources(design: Design, pageIndexes?: readonly number[]): s
   return [...sources];
 }
 
+/** Text drawn with one font stack: what an export must embed fonts for. */
+export interface TextRun {
+  /** Families in the order the browser tries them, as registered in the document. */
+  families: string[];
+  /** The chosen font's names. Its faces are required; the rest are fallbacks. */
+  primary: string[];
+  italic: boolean;
+  /** Every distinct character, in each letter case a text style may apply. */
+  codePoints: number[];
+}
+
+const PRINTABLE_ASCII = Array.from({ length: 0x7f - 0x20 }, (_, i) =>
+  String.fromCharCode(0x20 + i),
+);
+
 /**
- * Font families and styles the pages use, as registered in the document: bundled variable fonts
- * under both "<family> Variable" and their plain name. Inter is the default for any text
- * without its own font.
+ * The text runs of the pages. Runs keep each text's own font order, because the writing
+ * systems in a text decide which fallback fonts draw it (see `fontFamilies`).
  */
-export function fontUsage(
-  design: Design,
-  pageIndexes?: readonly number[],
-): Map<string, Set<string>> {
-  const names = new Map<string, Set<string>>([
-    ['Inter Variable', new Set(['normal'])],
-    ['Inter', new Set(['normal'])],
-  ]);
-  const addName = (family: string, italic: boolean) => {
-    const styles = names.get(family) ?? new Set(['normal']);
-    if (italic) styles.add('italic');
-    names.set(family, styles);
-  };
-  const add = (value: string, italic = false) => {
+export function textRuns(design: Design, pageIndexes?: readonly number[]): TextRun[] {
+  const locale = design.meta.locale;
+  const runs: TextRun[] = [
+    // Inter draws text without a font of its own, such as placeholders.
+    {
+      families: ['Inter Variable', 'Inter'],
+      primary: ['Inter Variable', 'Inter'],
+      italic: false,
+      codePoints: codePointsOf(PRINTABLE_ASCII.join('')),
+    },
+  ];
+  const add = (value: string, text: string, italic = false) => {
     const family = resolveFont(value, design.theme).trim();
     const font = getFont(family);
-    if (font?.variable) addName(`${font.family} Variable`, italic);
-    addName(font?.family ?? family, italic);
+    runs.push({
+      families: fontFamilies(family, { text, locale }),
+      primary: font ? registeredNames(font) : [family],
+      italic,
+      codePoints: codePointsOf(`${text}${text.toUpperCase()}${text.toLowerCase()}`),
+    });
   };
   for (const page of pagesOf(design, pageIndexes))
     for (const element of page.elements) {
       if (element.hidden) continue;
-      if (element.type === 'text') add(element.style.fontFamily, element.style.italic);
+      if (element.type === 'text')
+        add(element.style.fontFamily, element.text, element.style.italic);
       if (element.type === 'grid') {
-        add(element.nameStyle.fontFamily);
-        add(element.subtitleStyle.fontFamily);
+        for (const item of element.items) {
+          // Logos without a picture show the name's first letter in the name font.
+          add(element.nameStyle.fontFamily, `${item.name} ${item.name.trim().charAt(0)}•`);
+          if (item.subtitle) add(element.subtitleStyle.fontFamily, item.subtitle);
+        }
       }
     }
-  return names;
-}
-
-/** Every character the pages can show, in each letter case a text style may apply. */
-export function textCodePoints(design: Design, pageIndexes?: readonly number[]): Set<number> {
-  const points = new Set<number>();
-  for (let code = 0x20; code < 0x7f; code++) points.add(code);
-  const add = (text: string) => {
-    for (const variant of [text, text.toUpperCase(), text.toLowerCase()])
-      for (const ch of variant) points.add(ch.codePointAt(0) ?? 0);
-  };
-  for (const page of pagesOf(design, pageIndexes))
-    for (const element of page.elements) {
-      if (element.type === 'text') add(element.text);
-      if (element.type === 'grid')
-        for (const item of element.items) add(`${item.name}${item.subtitle ?? ''}•`);
-    }
-  return points;
+  return runs;
 }

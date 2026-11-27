@@ -18,6 +18,8 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 async function artworkReady(root: HTMLElement | null): Promise<void> {
   await nextFrame();
   if (!root) return;
+  // Laying the sheets out starts loading the fonts they use, so `fonts.ready` waits for them.
+  root.getBoundingClientRect();
   const pending: Promise<unknown>[] = [document.fonts.ready];
   for (const image of root.querySelectorAll('img')) pending.push(image.decode());
   const backgrounds = new Set<string>();

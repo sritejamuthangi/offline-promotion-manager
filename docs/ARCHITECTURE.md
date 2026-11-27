@@ -83,8 +83,27 @@ public detail pages and sitemap entries are generated automatically.
 
 `library:<id>` sources refer to 33 deterministic SVG graphics, drawn locally using the design's
 colours. Adaptive backgrounds and frames redraw for the target proportions. They use no IndexedDB
-space. `useImageSrc` resolves these graphics alongside local `asset:<id>` references. Font stacks
-map friendly names to the registered Fontsource families; 15 fonts are bundled under OFL-1.1.
+space. `useImageSrc` resolves these graphics alongside local `asset:<id>` references.
+
+### Fonts and writing systems
+
+`src/core/fonts.ts` is the font registry. 15 design fonts cover Latin, Greek and Cyrillic, and 24
+Noto fonts cover the other widely used writing systems; all are bundled from Fontsource under
+OFL-1.1. `fontStack` builds each text's CSS stack: the chosen font, Inter for missing Latin, Greek
+or Cyrillic letters, every writing-system font, then a generic family for emoji. The writing
+systems a text uses come first, in order of appearance, so shared characters (such as the danda in
+Bengali) come from the matching font. Chinese, Japanese and Korean share Chinese characters but draw
+them differently: kana select Japanese, hangul select Korean, and otherwise the design's
+`meta.locale` decides (`Hant` locales use traditional Chinese, others simplified).
+
+Fontsource splits every font into `unicode-range` subsets, so browsers fetch only the subsets a text
+uses. The writing-system stylesheets (about 440 KB, mostly CJK ranges) are a separate CSS chunk:
+`loadScriptFonts` imports it the first time a rendered page contains such text, and printing and
+exports wait for it. Latin-only designs never download it. Exports embed exactly the faces the
+browser would choose: `selectFaces` walks each text run's stack per character, mirroring font
+fallback, so an export carries the Japanese subsets of a Japanese text and no unrelated Latin or
+Chinese faces. Chosen fonts must load; a writing-system fallback that cannot load (for example
+offline before it was ever used) is skipped and the device's fonts draw that text.
 
 Online image search is opt-out, persisted in settings. Pure provider URL/response helpers live in
 `core/imageSearch.ts`; the UI owns cancellable requests and downloads, with timeouts and a streaming
@@ -129,8 +148,8 @@ the app's stylesheet:
 
 - Printing uses the browser's own print engine with CSS `@page` sizes, keeping text and shapes
   sharp. Browser and printer support determines available physical paper sizes.
-- Text is real text, so every script is shaped correctly (including Indic scripts, Arabic and CJK),
-  and "Save as PDF" in the print dialog produces true vector PDFs.
+- Text is real text, shaped by the browser with the bundled writing-system fonts (including Indic
+  scripts, Arabic, Hebrew and CJK), and "Save as PDF" in the print dialog produces vector PDFs.
 - Image exports (PNG, JPG and direct PDF) render the same DOM at the chosen DPI.
 
 ### Print layout and lifecycle
@@ -207,6 +226,8 @@ noindex and use a separate shell; unknown public routes return 404. See `docs/DE
   and pure helpers.
 - **Browser tests** (Playwright) for home/editor flows on desktop and phone-sized screens, including
   pointer transforms, real emulated touch gestures, undo, persistence and cross-tab recovery.
+- World-script browser tests check the per-text font order, that Latin-only designs never load the
+  writing-system fonts, and that exports embed only the faces drawing the text.
 - Print/export browser tests verify physical dimensions, multiple-copy and poster pagination,
   custom/US paper, print cleanup and failures, latest-edit snapshots, decodable PNG/JPG and DPI
   metadata, multi-page PDF boxes, offline uploaded images/fills, bleed and large-banner limits.
