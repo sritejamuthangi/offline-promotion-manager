@@ -14,7 +14,7 @@
 
 - **Free for everyone.** Every template and feature, no paywall, no watermark on your prints.
 - **Private.** Designs and images are saved only in your browser (IndexedDB). Nothing is uploaded.
-- **Made to print at true size.** Sizes are stored in real units, so an A4 design is exactly 210 × 297 mm on paper. Printing at any size, from A6 up to A0 or custom, arrives in step 6 below.
+- **Made to print at true size.** Use international, US or custom paper, fit designs to a sheet, repeat cards and labels, or tile a large poster across smaller sheets.
 - **Made for the whole world.** A4 and millimetres or US Letter and inches depending on your region (already working), with every writing system and right-to-left languages as the editor grows.
 - **Open source (MIT).** Use it, change it, host it yourself, ship it in your own products.
 
@@ -29,7 +29,7 @@ balanced card layout of that first version lives on in the Smart Grid element.
 - [x] **Step 3: elements.** Images, outline icons, stickers, QR codes (links, Wi‑Fi, email, calls, messages and UPI payments), Smart Grid with logos, image fills, borders, shadows and richer text styling.
 - [x] **Step 4: content system.** Searchable template catalogue, 20 colour palettes, 14 font pairings, built-in graphics, optional Openverse/Wikimedia Commons image search and local save-as-template.
 - [x] **Step 5: starter library.** 50 editable templates across business, education, events, greetings, food, signs and social media, with international and US sizes.
-- [ ] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
+- [x] **Step 6: printing and export.** Any paper size, poster tiling across sheets, several copies per sheet, bleed and crop marks, PDF/PNG/JPG.
 - [ ] **Step 7: worldwide and finishing.** Fonts for every script, phone layouts, offline install, backup and restore.
 
 ## Getting started
@@ -89,6 +89,41 @@ Use **Save as template** in the editor header or a home-screen design menu. It s
 snapshot under **Your templates**. Rename or delete saved templates from their preview, or start
 as many new designs from them as you like.
 
+### Printing and downloads
+
+Choose **Print** in the editor header, or press **Ctrl/⌘ + P**. The live preview shows the
+same sheets that will print:
+
+- **One per sheet:** actual size or fit to paper, automatic/portrait/landscape orientation,
+  international and US presets, custom paper, or a sheet exactly the size of the design.
+- **Several per sheet:** fill a sheet with cards or labels, or set a copy count and spacing.
+  The layout turns the paper or copies when more fit, and keeps each design page's copies together.
+- **Poster:** enlarge the design and split it across sheets. Overlap, cut marks and tile labels
+  help line up and join the printed pieces. The preview can step through every sheet.
+- **Crop marks and bleed:** cut lines outside the artwork, with optional extra artwork beyond
+  the trim edge. Automatic bleed extends edge colours and pictures while preserving the original
+  photo crop and geometry inside the finished page. Review the preview before sending to a printer.
+
+In the browser's print window, select matching paper, **100% / Actual size**, turn off headers
+and footers, and enable background graphics. Actual-size edge-to-edge designs require a borderless
+printer; **Fit to paper** leaves room for ordinary printer margins. Choose **Save as PDF** for
+sharp, selectable text and vector shapes. Printer settings and supported paper sizes depend on
+your browser and printer. Jobs exceeding 200 sheets or 1,000 copies per design page must be reduced.
+
+The **Download** button offers **PNG**, **JPG** and a direct **PDF** download. Physical designs
+offer 72, 150 and 300 DPI; screen designs offer 1×, 2× and 3× pixel sizes. Very large images are
+reduced to browser canvas limits, with the resulting size shown before export. PNG/JPG files carry
+resolution metadata. PDF downloads contain high-resolution page images, plus vector crop marks
+and trim/bleed boxes when requested; use browser printing for a PDF with selectable text.
+Multi-page designs can export all pages or the current page. Images download one file per page.
+
+Prints and files are prepared locally with bundled fonts and stored images, without watermarks.
+The Download panel prepares the fonts it needs; once **Download** is enabled, those fonts remain
+available for exports in that editing session even after disconnecting. Installable offline caching
+across reloads remains part of step 7.
+
+### Keyboard shortcuts
+
 | Action                                | Control                                                                |
 | ------------------------------------- | ---------------------------------------------------------------------- |
 | Move / resize / rotate                | Drag the element / its handles / the rotation handle                   |
@@ -103,10 +138,11 @@ as many new designs from them as you like.
 | Resize from centre / bypass snapping  | Hold Alt                                                               |
 | Pan / zoom                            | Space + drag / Ctrl/⌘ + scroll, or the on-screen controls              |
 | Add text / rectangle / ellipse / line | T / R / O / L                                                          |
+| Print / download options              | Ctrl/⌘ + P                                                             |
 
 Keyboard shortcuts apply when focus is outside text and number fields. Multilingual text uses
 the browser's shaping and the fonts available on your device; additional bundled script fonts
-are planned. Printing and export arrive in step 6.
+are planned.
 
 | Command            | What it does                                                 |
 | ------------------ | ------------------------------------------------------------ |
@@ -133,27 +169,29 @@ Configure the host's custom domain and DNS for `opm.sritejam.com`. See
 
 ## How it is built
 
-| Part         | Choice                                                      |
-| ------------ | ----------------------------------------------------------- |
-| Build        | Vite 8, TypeScript 7 (strict)                               |
-| UI           | React 19, Tailwind CSS 4, Radix UI primitives, lucide icons |
-| Routing      | TanStack Router (clean URLs, lazy-loaded screens)           |
-| State        | Zustand with Immer snapshots for undo/redo                  |
-| Storage      | IndexedDB through Dexie, behind repository interfaces       |
-| Images       | Local blobs in IndexedDB, deduplicated by SHA-256           |
-| QR codes     | `uqr` (MIT), with pure payload builders in `core`           |
-| File format  | Versioned JSON validated with Zod, with migrations          |
-| Translations | i18next with type-checked keys                              |
-| Quality      | Biome (lint and format), Vitest, Playwright, GitHub Actions |
+| Part         | Choice                                                       |
+| ------------ | ------------------------------------------------------------ |
+| Build        | Vite 8, TypeScript 7 (strict)                                |
+| UI           | React 19, Tailwind CSS 4, Radix UI primitives, lucide icons  |
+| Routing      | TanStack Router (clean URLs, lazy-loaded screens)            |
+| State        | Zustand with Immer snapshots for undo/redo                   |
+| Storage      | IndexedDB through Dexie, behind repository interfaces        |
+| Images       | Local blobs in IndexedDB, deduplicated by SHA-256            |
+| QR codes     | `uqr` (MIT), with pure payload builders in `core`            |
+| Printing     | Browser HTML/SVG, CSS `@page`, shared print-preview geometry |
+| Downloads    | Self-contained SVG-to-canvas PNG/JPG; local PDF writer       |
+| File format  | Versioned JSON validated with Zod, with migrations           |
+| Translations | i18next with type-checked keys                               |
+| Quality      | Biome (lint and format), Vitest, Playwright, GitHub Actions  |
 
 ```
 src/
   core/        Pure TypeScript: design format, units, paper sizes, layout, QR payloads. No React, fully tested.
   content/     Templates, palettes, font pairings and offline graphics.
   storage/     IndexedDB database and repositories (swap in a server database later).
-  features/    Screens: home, design, editor, settings.
+  features/    Screens: home, design, editor, print/download, settings.
   components/  Shared UI components.
-  render/      Shared HTML/SVG artwork for editor and thumbnails; printing follows.
+  render/      Shared HTML/SVG artwork for editor, thumbnails, print and export.
   i18n/        Translations.
   app/         App shell, routing, theme.
   seo/         Public-page metadata and build-time HTML generation.

@@ -115,8 +115,9 @@ so that its local work can still be saved as a copy.
 
 `src/render/PageArtwork.tsx` draws every element type with HTML and SVG: text, shapes and lines,
 images, QR codes, outline icons, stickers and the Smart Grid. Both the editor and home-screen
-thumbnails use it at document scale; the surrounding viewport applies scaling. Fonts, fills and
-geometry therefore agree between views. Printing and exports are planned for step 6:
+thumbnails use it at document scale; the surrounding viewport applies scaling. Printing and exports
+reuse the same markup and typography. Artwork uses inline styles so exports are independent of
+the app's stylesheet:
 
 - QR modules come from `uqr` (MIT). The encoded text is built by pure helpers in
   `src/core/qr.ts`, which keep the Wi‑Fi, email, phone, SMS and UPI formats testable.
@@ -126,11 +127,55 @@ geometry therefore agree between views. Printing and exports are planned for ste
   (`src/core/layout/balancedRows.ts`) and falls back to a monogram when an item has no logo.
 - Images and image fills resolve `asset:<id>` references through a cached object URL.
 
-- Printing uses the browser's own print engine with CSS `@page` sizes, which keeps text and shapes
-  sharp at any size (Chrome/Edge, Firefox 95+, Safari 18.2+).
+- Printing uses the browser's own print engine with CSS `@page` sizes, keeping text and shapes
+  sharp. Browser and printer support determines available physical paper sizes.
 - Text is real text, so every script is shaped correctly (including Indic scripts, Arabic and CJK),
   and "Save as PDF" in the print dialog produces true vector PDFs.
-- Image exports (PNG, JPG and one-click PDF) render the same DOM at the chosen DPI.
+- Image exports (PNG, JPG and direct PDF) render the same DOM at the chosen DPI.
+
+### Print layout and lifecycle
+
+`src/core/print/layout.ts` is a pure imposition planner. All sheet sizes, placements, clips, overlap
+and marks remain in CSS pixels. It handles actual-size and fitted pages, repeated copies with
+automatic orientation, and overlapping poster tiles. Print defaults follow the person's regional
+paper settings and the design size. Geometry generation stops at 200 sheets; the UI blocks jobs
+that exceed the sheet or copy limit rather than printing a truncated job.
+
+`src/features/print/PrintSheetView.tsx` renders both the preview and real output. `PrintArtwork`
+clips an expanded design to the bleed ring and keeps the original artwork inside the trim box, so
+adding bleed does not change photo crops or gradients on the finished page. Saved designs are never
+modified by print settings. Crop marks remain outside the bleed; poster ticks and labels indicate
+tile position and overlap.
+
+The editor snapshots its latest committed state when opening print options, including focused
+edits via Ctrl/⌘+P. `PrintJob` resolves local assets, waits for images and fonts, and renders sheets
+in a body-level portal. A print-only stylesheet hides the app and supplies physical `@page` sizes
+in millimetres. `afterprint` and print-media changes re-enable printing, but the sheets stay ready
+until the dialog closes or another print starts: some phone browsers return from `window.print()`
+immediately and lay out the printout later. Errors and dialog closure remove the job and restore the
+page title, which is set to the design name so "Save as PDF" suggests a sensible file name.
+Cancelled image preparation cannot create a stale print job after closing the dialog.
+
+### Download pipeline
+
+`exportFiles.tsx` embeds IndexedDB images as data URLs and the used bundled font faces/subsets as
+inline `@font-face` rules. A self-contained SVG `foreignObject` holds the shared XHTML artwork;
+the browser draws this onto a canvas at the requested DPI. Fonts use the HTTP cache and an
+in-memory data-URL cache. Opening the Download panel prepares the required faces before enabling
+the action, so disconnecting afterwards does not depend on the browser's font-response cache.
+Failed loads can be retried. Missing assets or failed font loads reject
+the export instead of silently omitting content. A service worker for offline installation is
+still planned for step 7.
+
+Canvas dimensions are bounded to 16,384 pixels per side and 50 megapixels on desktops, or 16.7
+megapixels on coarse-pointer devices. Resolution reduction is shown in the UI. PNG `pHYs` and JPEG
+JFIF density metadata retain the intended physical size. Canvases are released after encoding.
+
+The dependency-free PDF writer embeds one RGB JPEG per page, vector crop marks, and physical
+MediaBox/TrimBox/BleedBox coordinates. PDF 1.6 `UserUnit` preserves sizes beyond the normal
+200-inch coordinate limit. Binary stream lengths and cross-reference offsets are byte-counted;
+metadata supports Unicode. The UI distinguishes raster PDF downloads from browser-generated PDFs
+with vector/selectable text. Files have no watermark; app credit stays in the UI and README.
 
 `src/render/fill.ts` resolves background fills, and shared typography lives alongside the artwork
 renderer. Editor overlays (selection, guides, handles and text input) are separate from artwork.
@@ -162,4 +207,7 @@ noindex and use a separate shell; unknown public routes return 404. See `docs/DE
   and pure helpers.
 - **Browser tests** (Playwright) for home/editor flows on desktop and phone-sized screens, including
   pointer transforms, real emulated touch gestures, undo, persistence and cross-tab recovery.
+- Print/export browser tests verify physical dimensions, multiple-copy and poster pagination,
+  custom/US paper, print cleanup and failures, latest-edit snapshots, decodable PNG/JPG and DPI
+  metadata, multi-page PDF boxes, offline uploaded images/fills, bleed and large-banner limits.
 - `npm run check` runs lint, type-check and unit tests; CI runs everything on every push.

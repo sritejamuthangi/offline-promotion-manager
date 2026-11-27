@@ -107,6 +107,55 @@
   }
 }
 
+/*
+ * Printing. A print job renders its sheets into `.opm-print-root` and marks the document
+ * with `.opm-printing`; then only the sheets print. On screen the sheets stay hidden but
+ * laid out, so their images and fonts load before the print dialog opens.
+ */
+@media screen {
+  .opm-print-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media print {
+  html.opm-printing,
+  html.opm-printing body {
+    margin: 0;
+    padding: 0;
+    height: auto;
+    min-height: 0;
+    background: #fff;
+    /* biome-ignore lint/complexity/noImportantStyles: Open dialogs lock scrolling with an important rule; a hidden overflow can cut printing to one page. */
+    overflow: visible !important;
+  }
+
+  html.opm-printing body > :not(.opm-print-root) {
+    display: none;
+  }
+}
+
+.opm-print-root,
+.opm-print-root * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.opm-print-sheet {
+  break-inside: avoid;
+}
+
+.opm-print-sheet + .opm-print-sheet {
+  break-before: page;
+}
+
 /* Hides scrollbars on horizontally scrolling rows while keeping them scrollable. */
 @utility scrollbar-none {
   scrollbar-width: none;

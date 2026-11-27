@@ -8,12 +8,15 @@ export function useEditorShortcuts({
   setEditing,
   insert,
   save,
+  print,
 }: {
   store: EditorStore;
   setSpace: (space: boolean) => void;
   setEditing: (id: string | null) => void;
   insert: (kind: InsertKind) => void;
   save: () => Promise<boolean>;
+  /** Opens print options: the browser would otherwise print the editor screen. */
+  print: () => void;
 }) {
   useEffect(() => {
     let nudging = false;
@@ -27,6 +30,12 @@ export function useEditorShortcuts({
         event.preventDefault();
         target.blur();
         void save();
+        return;
+      }
+      if (mod && key === 'p') {
+        event.preventDefault();
+        target.blur();
+        print();
         return;
       }
       if (target.closest('input,textarea,select,[contenteditable="true"]')) return;
@@ -118,5 +127,5 @@ export function useEditorShortcuts({
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', blur);
     };
-  }, [store, setSpace, setEditing, insert, save]);
+  }, [store, setSpace, setEditing, insert, save, print]);
 }

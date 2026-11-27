@@ -24,7 +24,7 @@ import { ICON_COMPONENTS } from './icons';
 import { useImageSrc } from './imageSource';
 import { useFillCss } from './useFillCss';
 
-/** The same artwork is rendered in the editor and in every thumbnail, in document units. */
+/** Shared editor, thumbnail, print and export artwork, in document units. */
 export const PageArtwork = memo(function PageArtwork({
   design,
   pageIndex = 0,
@@ -37,12 +37,14 @@ export const PageArtwork = memo(function PageArtwork({
   resolveSrc?: (source: string) => string | undefined;
 }) {
   const page = design.pages[pageIndex];
-  const background = useFillCss(page?.background, design.theme, design);
+  const background = useFillCss(page?.background, design.theme, design, resolveSrc);
+  // Inline styles only: print sheets and image exports reuse this markup without app CSS.
   return (
     <div
-      className="relative overflow-hidden"
       data-testid="page-artwork"
       style={{
+        position: 'relative',
+        overflow: 'hidden',
         width: design.width,
         height: design.height,
         backgroundColor: 'white',
@@ -265,14 +267,22 @@ function LineArtwork({ element: e, theme }: { element: LineElement; theme: Theme
   );
   return (
     <div
-      className="relative size-full"
-      style={{ transform: `rotate(${e.rotation}deg)`, transformOrigin: 'center' }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      }}
     >
       {/* Keep very thin lines easy to select without changing their saved geometry. */}
       <span
         aria-hidden="true"
-        className="absolute start-0 end-0 top-1/2 -translate-y-1/2"
-        style={{ height: Math.max(e.height, 24) }}
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          height: Math.max(e.height, 24),
+        }}
       />
       <svg
         aria-hidden="true"
@@ -472,7 +482,7 @@ function GridArtwork({
   theme: Theme;
   resolveSrc?: (source: string) => string | undefined;
 }) {
-  const cardBackground = useFillCss(e.cardFill, theme);
+  const cardBackground = useFillCss(e.cardFill, theme, undefined, resolveSrc);
   const rows = smartGridRows(e.items.length, e.columns);
   const border =
     e.cardStroke && e.cardStroke.width > 0

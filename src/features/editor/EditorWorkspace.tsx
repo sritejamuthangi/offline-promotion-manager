@@ -1,5 +1,14 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, BookmarkPlus, Keyboard, Redo2, Undo2, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookmarkPlus,
+  Download,
+  Keyboard,
+  Printer,
+  Redo2,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -32,6 +41,7 @@ import {
   type StickerName,
 } from '@/core/schema';
 import { type ImageChoice, ImagePickerDialog } from '@/features/images/ImagePickerDialog';
+import { PrintDialog, type PrintTab } from '@/features/print/PrintDialog';
 import { SaveTemplateDialog } from '@/features/templates/SaveTemplateDialog';
 import { useMediaQuery } from '@/lib/hooks';
 import { designRepository } from '@/storage';
@@ -79,6 +89,8 @@ function Workspace() {
   const [qrOpen, setQrOpen] = useState(false);
   const [imagesOpen, setImagesOpen] = useState(false);
   const [templateDraft, setTemplateDraft] = useState<Design | null>(null);
+  const [printTab, setPrintTab] = useState<PrintTab | null>(null);
+  const [printDesign, setPrintDesign] = useState<Design | null>(null);
   const theme = useEditor((s) => s.doc.theme);
   const pageWidth = useEditor((s) => s.doc.width);
   const pageHeight = useEditor((s) => s.doc.height);
@@ -137,7 +149,18 @@ function Workspace() {
     (value: string) => insertElement(createQrElement(store.getState().doc, value)),
     [insertElement, store],
   );
-  useEditorShortcuts({ store, setSpace, setEditing, insert, save: flush });
+  const openPrint = useCallback(
+    (tab: PrintTab) => {
+      // Print what's on screen, including an edit still being typed.
+      store.getState().commit();
+      setEditing(null);
+      setPrintDesign(store.getState().doc);
+      setPrintTab(tab);
+    },
+    [store],
+  );
+  const print = useCallback(() => openPrint('print'), [openPrint]);
+  useEditorShortcuts({ store, setSpace, setEditing, insert, save: flush, print });
 
   const leave = async () => {
     if (await flush()) await navigate({ to: '/' });
@@ -218,6 +241,7 @@ function Workspace() {
           <Button
             size="icon-sm"
             variant="ghost"
+            className="hidden sm:inline-flex"
             aria-label={t('editor.shortcuts')}
             title={t('editor.shortcuts')}
             onClick={() => setHelp(true)}
@@ -227,6 +251,25 @@ function Workspace() {
           <div className="hidden sm:block">
             <ThemeMenu />
           </div>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={t('print.download')}
+            title={t('print.download')}
+            onClick={() => openPrint('download')}
+          >
+            <Download />
+          </Button>
+          <Button
+            size="sm"
+            className="ms-1"
+            aria-label={t('print.print')}
+            title={`${t('print.print')} (Ctrl/⌘ + P)`}
+            onClick={() => openPrint('print')}
+          >
+            <Printer />
+            <span className="hidden sm:inline">{t('print.print')}</span>
+          </Button>
         </div>
       </header>
       <div className="flex items-center justify-between border-b px-3 py-1.5 text-xs md:hidden">
@@ -379,6 +422,7 @@ function Workspace() {
               ['center', 'Alt'],
               ['text', 'T / R / O / L'],
               ['finish', 'Ctrl/⌘ + Enter'],
+              ['print', 'Ctrl/⌘ + P'],
             ].map(([key, shortcut]) => (
               <div key={key} className="flex items-center justify-between gap-4">
                 <dt>
@@ -407,6 +451,15 @@ function Workspace() {
         frame={{ width: pageWidth, height: pageHeight }}
       />
       <SaveTemplateDialog design={templateDraft} onClose={() => setTemplateDraft(null)} />
+      {printDesign && (
+        <PrintDialog
+          design={printDesign}
+          pageIndex={pageIndex}
+          tab={printTab}
+          onTabChange={setPrintTab}
+          onClose={() => setPrintTab(null)}
+        />
+      )}
     </div>
   );
 }
